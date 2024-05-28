@@ -8,6 +8,8 @@
 *.so
 *.dylib
 
+*.RHistory
+
 *.asv
 
 # Test binary, built with `go test -c`
