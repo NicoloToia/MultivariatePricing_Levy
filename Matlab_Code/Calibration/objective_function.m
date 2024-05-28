@@ -15,9 +15,8 @@ function obj = objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU, Mark
 % Filtered_US_Market: structure containing the S&P500 market data
 % M: N = 2^M is the number of points in the grid
 % dz: grid spacing
-% flag: flag for the choice of the model
-%           - flag = 'NIG': Normal Inverse Gaussian model
-%           - flag = 'VG': Variance Gamma model
+% alpha: Model selection parameter (NIG --> alpha = 0.5)
+%                                  (VG  --> alpha ~ 0)
 %
 % OUTPUTS
 % obj: objective function
@@ -37,6 +36,6 @@ rmseEU = compute_rmse(Market_EU, TTM_EU, sigma_EU, kappa_EU, theta_EU, alpha, M,
 rmseUS = compute_rmse(Market_US, TTM_US, sigma_US, kappa_US, theta_US, alpha, M, dz);
 
 % Compute the objective function
-obj = w_EU * sum(rmseEU) + w_US * sum(rmseUS);
+obj = w_EU * rmseEU + w_US * rmseUS;
 
 end
