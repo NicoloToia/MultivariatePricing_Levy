@@ -25,10 +25,9 @@ for ii = 1:length(maturity)
     % EU market data from the structure
     F0 = Filtered_Market.F0(ii).value; % forward price
     strikes = Filtered_Market.strikes(ii).value; % strikes
-    B0 = Filtered_Market.Mkt_discounts(ii).value; % discount factor
+    B0 = Filtered_Market.B_bar(ii).value; % discount factor
     Put = (Filtered_Market.putAsk(ii).prices + Filtered_Market.putBid(ii).prices)/2; % mid prices put
     Call = (Filtered_Market.callAsk(ii).prices + Filtered_Market.callBid(ii).prices)/2; % mid prices call
-    S0 = Filtered_Market.spot; % spot price
 
     % mkt zero rates
     rate = -log(B0)/maturity(ii);
