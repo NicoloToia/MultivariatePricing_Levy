@@ -153,7 +153,8 @@ b = [
 % Initial guess
 %p0 = [ 0.37 11.8 0.09 0.36 32 0.04];
 % p0 = [0.5 2 0.5 0.5 2 0.5];
-p0 = [0.5 20 1 1 20 2];
+%p0 = [0.5 20 1 1 20 2];
+p0 = [0.05 0.05 0.05 0.05 0.05 0.05];
 
 
 % Non linear constraints
@@ -164,7 +165,7 @@ options = optimset('Display', 'iter');
 
 % Optimization
 calibrated_param = fmincon(obj_fun, p0, A, b, [], [], [], [], const, options);
-%calibrated_param = [0.1679 0.18883 -0.018109 0.1295 0.34294 0.010364];
+%calibrated_param = [0.11908 0.0063921 0.018383 0.11747 0.009144 0.015161];
 
 % End elapse time
 toc
@@ -183,7 +184,7 @@ disp('---------------------------------------------------------------------')
 
 % Set the Fast Fourier Transform (FFT) parameters
 % M_fft = 15;
-% dz_fft = 0.001;
+% dz_fft = 0.0005;
 % alpha = 0.5;
 %calibrated_param = [0.1203 0.0002 0.0184 0.1199 0.0003 0.0144];
 % 

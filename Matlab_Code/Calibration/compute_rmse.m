@@ -17,10 +17,15 @@ function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, alpha, M, dz)
 % rmse_tot: total RMSE (root mean squared error) between the model and the market prices
 
 % Initialize rmse vector
-rmse = zeros(length(TTM), 1);
+rmse_vett = zeros(length(TTM), 1);
+
+weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
+
 
 % Cycle over expiries
 for ii = 1:length(TTM)
+
+
 
     % Import data from the Market struct
     F0 = Market.F0(ii).value;
@@ -39,13 +44,28 @@ for ii = 1:length(TTM)
     putPrices = callPrices - B0*(F0 - strikes);
 
     % Compute the RMSE
-    N = length(strikes);
-    rmse(ii) = sqrt( sum( ((putPrices - put).*(strikes <= F0)).^2 ) / (N*sum(strikes <= F0)) ) ...
-                    + sqrt( sum( ((callPrices - call).*(strikes > F0)).^2) / (N*sum(strikes > F0)) );
+    % N = length(strikes);
+    % rmse(ii) = sqrt( sum( ((putPrices - put).*(strikes <= F0)).^2 ) / (N*sum(strikes <= F0)) ) ...
+    %                 + sqrt( sum( ((callPrices - call).*(strikes > F0)).^2) / (N*sum(strikes > F0)) );
+
+    % rmse_vett(ii) = rmse( [callPrices.*(strikes <= F0), putPrices.*(strikes > F0)], ...
+    %    [call.*(strikes <= F0), put.*(strikes > F0)] );
+    jolly = callPrices.*(strikes <= F0);
+    prezzi_call = jolly(jolly~=0);
+    jolly = putPrices.*(strikes > F0);
+    prezzi_put = jolly(jolly~=0);
+
+    jolly = call.*(strikes <= F0);
+    call = jolly(jolly~=0);
+    jolly = put.*(strikes > F0);
+    put = jolly(jolly~=0);
+
+    rmse_vett(ii) = rmse( [prezzi_call, prezzi_put], ...
+       [call, put],  );
         
 end
 
 % Compute the total RMSE
-rmse_tot = sum(rmse);
+rmse_tot = sum(weights.*rmse_vett);
 
 end
