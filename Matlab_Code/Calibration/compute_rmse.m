@@ -61,7 +61,7 @@ for ii = 1:length(TTM)
     put = jolly(jolly~=0);
 
     rmse_vett(ii) = rmse( [prezzi_call, prezzi_put], ...
-       [call, put],  );
+       [call, put]);
         
 end
 
