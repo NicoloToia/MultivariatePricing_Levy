@@ -9,6 +9,7 @@ function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, alpha, M, dz)
 % kappa: volatility of the volatility
 % theta: skewness of the volatility
 % alpha: Model parameter (NIG --> alpha = 0.5)
+%                        (VG  --> alpha ~ 0)
 % M: N = 2^M is the number of points in the grid
 % dz: grid spacing
 %
@@ -19,13 +20,12 @@ function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, alpha, M, dz)
 % Initialize rmse vector
 rmse_vett = zeros(length(TTM), 1);
 
+% Compute weights to overweight short maturities errors on prices
 weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
 
 
 % Cycle over expiries
 for ii = 1:length(TTM)
-
-
 
     % Import data from the Market struct
     F0 = Market.F0(ii).value;
@@ -43,25 +43,35 @@ for ii = 1:length(TTM)
     % Compute the put prices via put-call parity
     putPrices = callPrices - B0*(F0 - strikes);
 
+    % % % % % Compute the RMSE
+    % % % % % N = length(strikes);
+    % % % % % rmse(ii) = sqrt( sum( ((putPrices - put).*(strikes <= F0)).^2 ) / (N*sum(strikes <= F0)) ) ...
+    % % % % %                 + sqrt( sum( ((callPrices - call).*(strikes > F0)).^2) / (N*sum(strikes > F0)) );
+
+    % % % % % rmse_vett(ii) = rmse( [callPrices.*(strikes <= F0), putPrices.*(strikes > F0)], ...
+    % % % % %    [call.*(strikes <= F0), put.*(strikes > F0)] );
+    
+    % Extract the model prices for calls and puts
+    % Call prices for OTM options
+    OTM_call_model_long = callPrices.*(strikes > F0);
+    OTM_call_model = OTM_call_model_long(OTM_call_model_long~=0);
+
+    % Put prices for OTM options
+    OTM_put_model_long = putPrices.*(strikes <= F0);
+    OTM_put_model = OTM_put_model_long(OTM_put_model_long~=0);
+
+    % Extract the market prices for calls and puts
+    % Call prices for OTM options
+    OTM_call_market_long = call.*(strikes > F0);
+    OTM_call_market = OTM_call_market_long(OTM_call_market_long~=0);
+
+    % Put prices for OTM options
+    OTM_put_market_long = put.*(strikes <= F0);
+    OTM_put_market = OTM_put_market_long(OTM_put_market_long~=0);
+
     % Compute the RMSE
-    % N = length(strikes);
-    % rmse(ii) = sqrt( sum( ((putPrices - put).*(strikes <= F0)).^2 ) / (N*sum(strikes <= F0)) ) ...
-    %                 + sqrt( sum( ((callPrices - call).*(strikes > F0)).^2) / (N*sum(strikes > F0)) );
-
-    % rmse_vett(ii) = rmse( [callPrices.*(strikes <= F0), putPrices.*(strikes > F0)], ...
-    %    [call.*(strikes <= F0), put.*(strikes > F0)] );
-    jolly = callPrices.*(strikes <= F0);
-    prezzi_call = jolly(jolly~=0);
-    jolly = putPrices.*(strikes > F0);
-    prezzi_put = jolly(jolly~=0);
-
-    jolly = call.*(strikes <= F0);
-    call = jolly(jolly~=0);
-    jolly = put.*(strikes > F0);
-    put = jolly(jolly~=0);
-
-    rmse_vett(ii) = rmse( [prezzi_call, prezzi_put], ...
-       [call, put]);
+    rmse_vett(ii) = rmse( [OTM_call_model, OTM_put_model], ...
+       [OTM_call_market, OTM_put_market]);
         
 end
 
