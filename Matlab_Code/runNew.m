@@ -35,7 +35,8 @@ Markets = load('OptionData.mat');
 Market_EU = Markets.mkt_EU;
 Market_US = Markets.mkt;
 clear Markets;
-Returns = load('SPXSX5Ereturns.mat');
+% Load the market returns
+load('SPXSX5Ereturns.mat');
 
 %% COMPUTE DISCOUNT FACTORS AND FORWARD PRICES FROM OPTION DATA
 
@@ -118,7 +119,7 @@ w_US = spot_US/(spot_EU + spot_US);
 
 % Set the Fast Fourier Transform (FFT) parameters
 M_fft = 15;
-dz_fft = 0.0005;
+dz_fft = 0.005;
 alpha = 0.5;
 
 % Calibrate the NIG parameters for the two markets (EU and US)
@@ -165,7 +166,10 @@ options = optimset('Display', 'iter');
 
 % Optimization
 calibrated_param = fmincon(obj_fun, p0, A, b, [], [], [], [], const, options);
-%calibrated_param = [0.11908 0.0063921 0.018383 0.11747 0.009144 0.015161];
+% M = 15, dz = 0.0005
+% calibrated_param = [0.11908 0.0063921 0.018383 0.11747 0.009144 0.015161];
+% M = 15, dz = 0.005
+% calibrated_param = [0.11991 0.0024632 0.021422 0.10851 0.0019843 0.021599];
 
 % End elapse time
 toc
@@ -223,7 +227,7 @@ Market_US_calibrated.B_bar = Market_US_filtered.B_bar;
 % nuZ = nu(3)
 
 % Compute the historical correlation between the two markets
-corrHist = corr(Returns.Returns.Annually(:,2), Returns.Returns.Annually(:,1));
+corrHist = corr(Returns.Annually(:,2), Returns.Annually(:,1));
 
 % Define the system of equations
 eqn1 = @(nu) calibrated_param(2) - (nu(1)*nu(3))/(nu(1) + nu(3));
@@ -313,3 +317,52 @@ plot_model_ImpVol(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Imp
 % Plot the model implied volatilities versus the market implied volatilities for the US market
 %plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
 
+%%  ESTIMATE HISTORICAL CORRELATION BETWEEN THE TWO INDExES
+
+% Plot the returns of the two markets yearly and daily
+plot_returns(Market_EU, Market_US, Returns);
+
+% Compute the historical correlation between the two markets with the yearly returns
+HistCorr = corr(Returns.Annually(:,2), Returns.Annually(:,1));
+
+% Print the results
+disp('---------------------------------------------------------------------')
+disp(['The historical correlation between the two indexes is: ', num2str(HistCorr)]);
+disp('---------------------------------------------------------------------')
+
+%% Alternative Model: BLACK CALIBRATION
+
+% Define the objective function for the black model
+% EU market
+EU_black_obj = @(sigma) black_obj(sigma, TTM_EU, Market_EU_filtered);
+
+% US market
+US_black_obj = @(sigma) black_obj(sigma, TTM_US, Market_US_filtered);
+
+% options
+options = optimset('Display', 'iter');
+
+% Calibrate the Black model for the two markets
+% Constraints: sigma > 0
+% the initial guess is set to 0.001
+
+% EU market
+sigmaB_EU = fmincon(EU_black_obj, 0.001, [], [], [], [], 0, [], [], options);
+
+% US market
+sigmaB_US = fmincon(US_black_obj, 0.001, [], [], [], [], 0, [], [], options);
+
+% print the results
+disp('---------------------------------------------------------------------')
+disp('The calibrated parameters are:');
+disp(['sigmaB_EU = ', num2str(sigmaB_EU)]);
+disp(['sigmaB_US = ', num2str(sigmaB_US)]);
+disp('---------------------------------------------------------------------')
+
+% Compute the covariance of the Brownian motions and match the historical correlation between the two indexes
+covBMs = HistCorr * sqrt(sigmaB_EU) * sqrt(sigmaB_US);
+
+% print the results
+disp('---------------------------------------------------------------------')
+disp(['The covariance between the BMs is: ', num2str(covBMs)]);
+disp('---------------------------------------------------------------------')
