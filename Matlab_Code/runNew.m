@@ -1,4 +1,4 @@
-%% THE BIG LEVY PROJECT: Multivariate Pricing
+%% THE BIG LÉVY PROJECT: Multivariate Pricing
 %  Final Project Financial Engineering 2024
 % Professors: Roberto Baviera & Michele Azzone
 % Group 2B
@@ -366,3 +366,27 @@ covBMs = HistCorr * sqrt(sigmaB_EU) * sqrt(sigmaB_US);
 disp('---------------------------------------------------------------------')
 disp(['The covariance between the BMs is: ', num2str(covBMs)]);
 disp('---------------------------------------------------------------------')
+
+%% PRICING USING BOTH MODELS: BLACK MODEL
+
+% Compute the price of the derivative with the following payoff:
+% Payoff = max(S1(t) - S1(0), 0)*I(S2(t) < 0.95*S2(0))
+% where S1(t) and S2(t) are the prices of the two indexes at time t
+
+% Set the target date, 1 year from the settlement date check for business days
+targetDate = datetime(settlement, 'ConvertFrom', 'datenum') + calyears(1);
+targetDate(~isbusday(targetDate, eurCalendar())) = busdate(targetDate(~isbusday(targetDate, eurCalendar())), 'modifiedfollow', eurCalendar());
+targetDate = datenum(targetDate);
+
+% Intialize the mean of the Brownian motions
+MeanBMs = [0;
+           0];
+
+% Number of simulations
+N_sim = 1e7;
+
+% Compute the price of the derivative using the Black model
+price = black_pricing(Market_EU_calibrated, spot_US, sigmaB_EU, sigmaB_US, settlement, targetDate, MeanBMs, covBMs, N_sim);
+
+%% PRICING USING BOTH MODELS: LÉVY MODEL
+
