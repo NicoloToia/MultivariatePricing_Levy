@@ -165,11 +165,11 @@ options = optimset('Display', 'iter');
 % options = optimoptions('fmincon', 'Display', 'off');
 
 % Optimization
-calibrated_param = fmincon(obj_fun, p0, A, b, [], [], [], [], const, options);
+%calibrated_param = fmincon(obj_fun, p0, A, b, [], [], [], [], const, options);
 % M = 15, dz = 0.0005
 % calibrated_param = [0.11908 0.0063921 0.018383 0.11747 0.009144 0.015161];
 % M = 15, dz = 0.005
-% calibrated_param = [0.11991 0.0024632 0.021422 0.10851 0.0019843 0.021599];
+ calibrated_param = [0.11991 0.0024632 0.021422 0.10851 0.0019843 0.021599];
 
 % End elapse time
 toc
@@ -334,10 +334,10 @@ disp('---------------------------------------------------------------------')
 
 % Define the objective function for the black model
 % EU market
-EU_black_obj = @(sigma) black_obj(sigma, TTM_EU, Market_EU_filtered);
+EU_black_obj = @(sigma) black_obj(Market_EU_filtered, TTM_EU, sigma);
 
 % US market
-US_black_obj = @(sigma) black_obj(sigma, TTM_US, Market_US_filtered);
+US_black_obj = @(sigma) black_obj(Market_US_filtered, TTM_US, sigma);
 
 % options
 options = optimset('Display', 'iter');
@@ -347,10 +347,10 @@ options = optimset('Display', 'iter');
 % the initial guess is set to 0.001
 
 % EU market
-sigmaB_EU = fmincon(EU_black_obj, 0.001, [], [], [], [], 0, [], [], options);
+sigmaB_EU = fmincon(EU_black_obj, 0.0001, [], [], [], [], 0, [], [], options);
 
 % US market
-sigmaB_US = fmincon(US_black_obj, 0.001, [], [], [], [], 0, [], [], options);
+sigmaB_US = fmincon(US_black_obj, 0.0001, [], [], [], [], 0, [], [], options);
 
 % print the results
 disp('---------------------------------------------------------------------')
