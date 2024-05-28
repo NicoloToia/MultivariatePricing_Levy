@@ -238,7 +238,7 @@ rho = @(nu) corrHist - sqrt( (nu(1)*nu(2)) / ((nu(1) + nu(3)) * (nu(2) + nu(3)))
 
 % Define the system of equations and solve it to find the calibrated parameter nu_z
 system_eq = @(nu) [eqn1(nu), eqn2(nu), rho(nu)];
-options = optimoptions('fsolve', 'Display', 'iter'); % Display iteration for debugging
+options = optimoptions('fmincon', 'Display', 'off');
 nu_calibrated = fsolve(system_eq, [1, 1, 5], options);
 
 % Compute the calibrated parameter nu_z using an alternative method
@@ -340,7 +340,7 @@ EU_black_obj = @(sigma) black_obj(Market_EU_filtered, TTM_EU, sigma);
 US_black_obj = @(sigma) black_obj(Market_US_filtered, TTM_US, sigma);
 
 % options
-options = optimset('Display', 'iter');
+options = optimoptions('fmincon', 'Display', 'off');
 
 % Calibrate the Black model for the two markets
 % Constraints: sigma > 0
