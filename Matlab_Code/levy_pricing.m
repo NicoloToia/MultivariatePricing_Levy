@@ -98,4 +98,11 @@ function derivativePrice_MC = levy_pricing(Market_EU, S0_US, settlement, targetD
     % disp([mu_3, mu_3_an]);
     % disp([mu_4, mu_4_an]);
 
+
+% Display the results
+fprintf('------------------------------------------------------------------\n');
+fprintf('The price of the derivative via Lévy is: %.4f\n', derivativePrice_MC);
+% fprintf('The confidence interval is: [%.4f, %.4f]\n', priceCI(1), priceCI(2));
+fprintf('------------------------------------------------------------------\n');
+
 end
