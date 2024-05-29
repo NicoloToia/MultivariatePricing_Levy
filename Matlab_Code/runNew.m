@@ -458,3 +458,6 @@ N_sim = 1e7;
 % Compute the price of the derivative using the Black model
 price_black = black_pricing(Market_EU_calibrated, spot_US, sigmaB_EU, sigmaB_US, settlement, targetDate, MeanBMs, covBMs, N_sim);
 
+% Compute the price of the derivative using the Lévy model
+derivativePrice_MC = levy_pricing(Market_EU_calibrated, spot_US, settlement, targetDate, alpha,...
+                                    kappa_EU, kappa_US, sigma_EU, sigma_US, theta_EU, theta_US, N_sim);
