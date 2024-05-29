@@ -8,7 +8,7 @@ function plot_model_ImpVol(Model, Market, plotTitle)
 % cycle through the different maturities
 for ii = 1:length(Market.datesExpiry)
     figure;
-    plot(Market.strikes(ii).value, Model.ImpVol_call(ii).value, 'b', 'LineWidth', 1);
+    plot(Market.strikes(ii).value, Model.OTM_ImpVol(ii).value, 'b', 'LineWidth', 1);
     hold on;
     plot(Market.strikes(ii).value, Market.OTM_ImpVol(ii).value, 'r', 'LineWidth', 1);
     title([plotTitle, ' at maturity: ', num2str(ii)]);
