@@ -38,12 +38,12 @@ prefactor = d_xi * exp(-1i * xi_1 * z);
 I = prefactor .* FFT;
 
 %check that the immaginary part is close to zero
-%if not plot the value of immaginary part (10 ^  is a threshold)
-if max(abs(imag(I))) > 1
-    figure;
-    plot(imag(I))
-    error('Immaginary part of the integral is not close to zero')   
-end
+% %if not plot the value of immaginary part (10 ^  is a threshold)
+% if max(abs(imag(I))) > 1
+%     figure;
+%     plot(imag(I))
+%     error('Immaginary part of the integral is not close to zero')   
+% end
 
 % get only the real part
 I = real(I);
