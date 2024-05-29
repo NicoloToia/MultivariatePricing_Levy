@@ -56,7 +56,7 @@ priceCI = [price - CI, price + CI];
 
 % Display the results
 fprintf('------------------------------------------------------------------\n');
-fprintf('The price of the derivative is: %.4f\n', price);
+fprintf('The price of the derivative via Black model is: %.4f\n', price);
 fprintf('The confidence interval is: [%.4f, %.4f]\n', priceCI(1), priceCI(2));
 fprintf('------------------------------------------------------------------\n');
 
