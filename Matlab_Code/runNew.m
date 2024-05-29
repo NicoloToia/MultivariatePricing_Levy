@@ -1,5 +1,5 @@
 %% THE BIG LÉVY PROJECT: Multivariate Pricing
-%  Final Project Financial Engineering 2024
+% Final Project Financial Engineering 2024
 % Professors: Roberto Baviera & Michele Azzone
 % Group 2B
 % Giacomo Manfredi  CP: 10776946
@@ -24,6 +24,7 @@ addpath('ImpVol');
 addpath('Filter');
 addpath('Calibration');
 addpath('Model_Check');
+addpath('Pricing')
 
 %% IMPORT DATA
 
@@ -106,11 +107,14 @@ Market_EU_filtered = Filter(Market_EU);
 % Create a new struct for the US market with the filtered options
 Market_US_filtered = Filter(Market_US);
 
+Market_EU_filtered = compute_ImpVol(Market_EU_filtered, TTM_EU, rates_EU);
+
 % Plot the filtered implied volatility smiles for the EU market
 plot_ImpVol(Market_EU_filtered, 'EU OTM Implied Volatility Smile (Filtered)');
 % Plot the filtered implied volatility smiles for the US market
 plot_ImpVol(Market_US_filtered, 'US OTM Implied Volatility Smile (Filtered)');
 
+close all;
 %% CALIBRATION
 
 % Define the weight of both markets (EU and US)
@@ -184,16 +188,6 @@ disp(['sigma_US = ', num2str(calibrated_param(4))]);
 disp(['kappa_US = ', num2str(calibrated_param(5))]);
 disp(['theta_US = ', num2str(calibrated_param(6))]);
 disp('---------------------------------------------------------------------')
-%%
-
-% Set the Fast Fourier Transform (FFT) parameters
-% M_fft = 15;
-% dz_fft = 0.0005;
-% alpha = 0.5;
-%calibrated_param = [0.1203 0.0002 0.0184 0.1199 0.0003 0.0144];
-% 
-% % nostri
-% calibrated_param = [0.1679 0.18883 -0.018109 0.1295 0.34294 0.010364];
 
 %% NEW STRUCT FOR MARKET MODEL
 
@@ -238,8 +232,8 @@ rho = @(nu) corrHist - sqrt( (nu(1)*nu(2)) / ((nu(1) + nu(3)) * (nu(2) + nu(3)))
 
 % Define the system of equations and solve it to find the calibrated parameter nu_z
 system_eq = @(nu) [eqn1(nu), eqn2(nu), rho(nu)];
-options = optimoptions('fmincon', 'Display', 'off');
-nu_calibrated = fsolve(system_eq, [1, 1, 5], options);
+options = optimoptions('fsolve', 'Display', 'off');
+nu_calibrated = fsolve(system_eq, ones(3,1), options);
 
 % Compute the calibrated parameter nu_z using an alternative method
 nu_z = sqrt(calibrated_param(2)*calibrated_param(5))/corrHist;
@@ -360,12 +354,48 @@ disp(['sigmaB_US = ', num2str(sigmaB_US)]);
 disp('---------------------------------------------------------------------')
 
 % Compute the covariance of the Brownian motions and match the historical correlation between the two indexes
-covBMs = HistCorr * sqrt(sigmaB_EU) * sqrt(sigmaB_US);
+covBMs = HistCorr * sigmaB_EU * sigmaB_US;
 
 % print the results
 disp('---------------------------------------------------------------------')
 disp(['The covariance between the BMs is: ', num2str(covBMs)]);
 disp('---------------------------------------------------------------------')
+
+% compute the price of the derivative using the Black model
+
+% EU market
+% cycle through the expiries
+% add the  the maturity to the new struct
+Market_EU_Black.datesExpiry = Market_EU_filtered.datesExpiry;
+for ii = 1:length(Market_EU_filtered.datesExpiry)
+    % add the strikes to the new struct
+    Market_EU_Black.strikes(ii).value = Market_EU_filtered.strikes(ii).value;
+        % Compute the price of the derivative using the Black model use blk built in function and save in in a new struct
+    [Market_EU_Black.midCall(ii).value , Market_EU_Black.midPut(ii).value] = ...
+            blkprice(Market_EU_filtered.F0(ii).value, Market_EU_filtered.strikes(ii).value, rates_EU(ii), TTM_EU(ii), sigmaB_EU);
+end
+
+% US market
+% cycle through the expiries
+% add the  the maturity to the new struct
+Market_US_Black.datesExpiry = Market_US_filtered.datesExpiry;
+
+for ii = 1:length(Market_US_filtered.datesExpiry)
+    % add the strikes to the new struct
+    Market_US_Black.strikes(ii).value = Market_US_filtered.strikes(ii).value;
+        % Compute the price of the derivative using the Black model use blk built in function and save in in a new struct
+    [Market_US_Black.midCall(ii).value , Market_US_Black.midPut(ii).value] = ...
+            blkprice(Market_US_filtered.F0(ii).value, Market_US_filtered.strikes(ii).value, rates_US(ii), TTM_US(ii), sigmaB_US);
+end
+
+% Plot the model prices for the EU market versus real prices for each expiry
+
+% Plot the model prices for the EU market versus real prices for each expiry
+% plot_model_prices(Market_EU_Black, Market_EU_filtered, 'EU Market Model Prices vs EU Real Prices (Black Model)');
+
+% Plot the model prices for the US market versus real prices for each expiry
+% plot_model_prices(Market_US_Black, Market_US_filtered, 'US Market Model Prices vs US Real Prices (Black Model)');
+
 
 %% PRICING USING BOTH MODELS: BLACK MODEL
 
@@ -386,7 +416,6 @@ MeanBMs = [0;
 N_sim = 1e7;
 
 % Compute the price of the derivative using the Black model
-price = black_pricing(Market_EU_calibrated, spot_US, sigmaB_EU, sigmaB_US, settlement, targetDate, MeanBMs, covBMs, N_sim);
+price_black = black_pricing(Market_EU_calibrated, spot_US, sigmaB_EU, sigmaB_US, settlement, targetDate, MeanBMs, covBMs, N_sim);
 
-%% PRICING USING BOTH MODELS: LÉVY MODEL
 
