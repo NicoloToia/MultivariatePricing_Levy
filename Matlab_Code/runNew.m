@@ -279,7 +279,8 @@ check_neagtive_prices(Market_EU_calibrated, Market_US_calibrated);
 %% COMPUTE PRICES PERCENTAGE ERRORS
 
 % Compute the percentage errors for the EU and US markets
-[percentage_error_EU, percentage_error_US] = percentage_error(Market_EU_calibrated, Market_US_calibrated, Market_EU_filtered, Market_US_filtered);
+[percentage_error_EU, percentage_error_US] = ...
+        percentage_error(Market_EU_calibrated, Market_US_calibrated, Market_EU_filtered, Market_US_filtered);
 
 % Print the results
 disp(['The average percentage error for the EU market is: ', num2str(percentage_error_EU), '%']);
@@ -303,6 +304,22 @@ Market_EU_calibrated = compute_ImpVol(Market_EU_calibrated, TTM_EU, rates_EU);
 % Compute the implied volatilities for the US market
 Market_US_calibrated = compute_ImpVol(Market_US_calibrated, TTM_US, rates_US);
 
+% select the OTM implied volatilities for the EU market
+Market_EU_calibrated = select_OTM(Market_EU_calibrated);
+
+% select the OTM implied volatilities for the US market
+Market_US_calibrated = select_OTM(Market_US_calibrated);
+
+%% COMPUTE IMPLIED VOLATILITY PERCENTAGE ERRORS
+
+% compute the percentage error (implied volatility) for the calibrated model
+[percentage_error_EU_IV, percentage_error_US_IV] = ...
+             percentage_error_ImpVol(Market_EU_calibrated, Market_US_calibrated, Market_EU_filtered, Market_US_filtered);
+
+% print the results
+disp(['The average percentage error for the EU market (Implied Volatility) is: ', num2str(percentage_error_EU_IV), '%']);
+disp(['The average percentage error for the US market (Implied Volatility) is: ', num2str(percentage_error_US_IV), '%']);
+
 %% PLOT IMPLIED VOLATILITIES FOR THE CALIBRATED PRICES
 
 % Plot the model implied volatilities versus the market implied volatilities for the EU market
@@ -323,6 +340,23 @@ HistCorr = corr(Returns.Annually(:,2), Returns.Annually(:,1));
 disp('---------------------------------------------------------------------')
 disp(['The historical correlation between the two indexes is: ', num2str(HistCorr)]);
 disp('---------------------------------------------------------------------')
+
+%% NEW STRUCT FOR MARKET MODEL (BLACK)
+
+% EU Market
+Market_EU_Black.datesExpiry = Market_EU_filtered.datesExpiry;
+Market_EU_Black.strikes = Market_EU_filtered.strikes;
+Market_EU_Black.spot = Market_EU_filtered.spot;
+Market_EU_Black.F0 = Market_EU_filtered.F0;
+Market_EU_Black.B_bar = Market_EU_filtered.B_bar;
+
+% US Market
+Market_US_Black.datesExpiry = Market_US_filtered.datesExpiry;
+Market_US_Black.strikes = Market_US_filtered.strikes;
+Market_US_Black.spot = Market_US_filtered.spot;
+Market_US_Black.F0 = Market_US_filtered.F0;
+Market_US_Black.B_bar = Market_US_filtered.B_bar;
+
 
 %% Alternative Model: BLACK CALIBRATION
 
@@ -353,6 +387,10 @@ disp(['sigmaB_EU = ', num2str(sigmaB_EU)]);
 disp(['sigmaB_US = ', num2str(sigmaB_US)]);
 disp('---------------------------------------------------------------------')
 
+% add volatilities to the struct
+Market_EU_Black.sigma = sigmaB_EU;
+Market_US_Black.sigma = sigmaB_US;
+
 % Compute the covariance of the Brownian motions and match the historical correlation between the two indexes
 covBMs = HistCorr * sigmaB_EU * sigmaB_US;
 
@@ -365,28 +403,30 @@ disp('---------------------------------------------------------------------')
 
 % EU market
 % cycle through the expiries
-% add the  the maturity to the new struct
-Market_EU_Black.datesExpiry = Market_EU_filtered.datesExpiry;
 for ii = 1:length(Market_EU_filtered.datesExpiry)
-    % add the strikes to the new struct
-    Market_EU_Black.strikes(ii).value = Market_EU_filtered.strikes(ii).value;
         % Compute the price of the derivative using the Black model use blk built in function and save in in a new struct
-    [Market_EU_Black.midCall(ii).value , Market_EU_Black.midPut(ii).value] = ...
-            blkprice(Market_EU_filtered.F0(ii).value, Market_EU_filtered.strikes(ii).value, rates_EU(ii), TTM_EU(ii), sigmaB_EU);
+    [call , put] = blkprice(Market_EU_filtered.F0(ii).value, Market_EU_filtered.strikes(ii).value, rates_EU(ii), TTM_EU(ii), sigmaB_EU);
+    Market_EU_Black.midCall(ii).value = call';
+    Market_EU_Black.midPut(ii).value = put';
+    
 end
 
 % US market
 % cycle through the expiries
-% add the  the maturity to the new struct
-Market_US_Black.datesExpiry = Market_US_filtered.datesExpiry;
-
 for ii = 1:length(Market_US_filtered.datesExpiry)
-    % add the strikes to the new struct
-    Market_US_Black.strikes(ii).value = Market_US_filtered.strikes(ii).value;
         % Compute the price of the derivative using the Black model use blk built in function and save in in a new struct
-    [Market_US_Black.midCall(ii).value , Market_US_Black.midPut(ii).value] = ...
-            blkprice(Market_US_filtered.F0(ii).value, Market_US_filtered.strikes(ii).value, rates_US(ii), TTM_US(ii), sigmaB_US);
+    [call , put] = blkprice(Market_US_filtered.F0(ii).value, Market_US_filtered.strikes(ii).value, rates_US(ii), TTM_US(ii), sigmaB_US);
+    Market_US_Black.midCall(ii).value = call';
+    Market_US_Black.midPut(ii).value = put';
 end
+
+% compute the percentage error for the Black model
+[percentage_error_EU_Black, percentage_error_US_Black] = ...
+             percentage_error(Market_EU_Black, Market_US_Black, Market_EU_filtered, Market_US_filtered);
+
+% print the results
+disp(['The average percentage error for the EU market (Black Model) is: ', num2str(percentage_error_EU_Black), '%']);
+disp(['The average percentage error for the US market (Black Model) is: ', num2str(percentage_error_US_Black), '%']);
 
 % Plot the model prices for the EU market versus real prices for each expiry
 
@@ -417,5 +457,4 @@ N_sim = 1e7;
 
 % Compute the price of the derivative using the Black model
 price_black = black_pricing(Market_EU_calibrated, spot_US, sigmaB_EU, sigmaB_US, settlement, targetDate, MeanBMs, covBMs, N_sim);
-
 
