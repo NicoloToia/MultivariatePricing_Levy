@@ -107,6 +107,7 @@ Market_EU_filtered = Filter(Market_EU);
 % Create a new struct for the US market with the filtered options
 Market_US_filtered = Filter(Market_US);
 
+
 Market_EU_filtered = compute_ImpVol(Market_EU_filtered, TTM_EU, rates_EU);
 
 % Plot the filtered implied volatility smiles for the EU market
@@ -393,6 +394,8 @@ Market_US_Black.sigma = sigmaB_US;
 
 % Compute the covariance of the Brownian motions and match the historical correlation between the two indexes
 covBMs = HistCorr * sigmaB_EU * sigmaB_US;
+%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MINCHIATA
+%!!!!!!!!!!!!!!!!!!!!!!!!!
 
 % print the results
 disp('---------------------------------------------------------------------')
@@ -456,7 +459,7 @@ MeanBMs = [0;
 N_sim = 1e7;
 
 % Compute the price of the derivative using the Black model
-price_black = black_pricing(Market_EU_calibrated, spot_US, sigmaB_EU, sigmaB_US, settlement, targetDate, MeanBMs, covBMs, N_sim);
+price_black = black_pricing(Market_EU_calibrated, spot_US, sigmaB_EU, sigmaB_US, settlement, targetDate, MeanBMs, HistCorr, N_sim);
 
 % Compute the price of the derivative using the Lévy model
 derivativePrice_MC = levy_pricing(Market_EU_calibrated, spot_US, settlement, targetDate, alpha,...
