@@ -13,10 +13,11 @@ function [error_EU, error_US] = percentage_error(Model_EU, Model_US, Market_EU, 
 % error_US: percentage error for the American market
 
 % Inizialize the error vector (auxiliary variable)
-err = zeros(2*length(Market_EU.datesExpiry),1);
+errCall = zeros(length(Market_EU.datesExpiry),1);
+errPut = zeros(length(Market_EU.datesExpiry),1);
 
 % Cycle over EU expiries
-for ii = 1:2:length(Market_EU.datesExpiry)
+for ii = 1:length(Market_EU.datesExpiry)
     % Real prices
     real_price_call = Market_EU.midCall(ii).value;
     real_price_put = Market_EU.midPut(ii).value;
@@ -27,18 +28,19 @@ for ii = 1:2:length(Market_EU.datesExpiry)
     e_call = (model_price_call - real_price_call)./real_price_call;
     e_put = (model_price_put - real_price_put)./real_price_put;
     % Store the errors
-    err(ii) = mean(abs(e_call))*100;
-    err(ii+1) = mean(abs(e_put))*100;
+    errCall(ii) = mean(abs(e_call))*100;
+    errPut(ii) = mean(abs(e_put))*100;
 end
 
 % Calculate the percentage error for the European market
-error_EU = mean(err);
+error_EU = mean([errCall; errPut]);
 
 % Inizialize the error vector (auxiliary variable)
-err = zeros(2*length(Market_US.datesExpiry),1);
+errCall = zeros(length(Market_US.datesExpiry),1);
+errPut = zeros(length(Market_US.datesExpiry),1);
 
 % Cycle over US expiries
-for ii = 1:2:length(Market_US.datesExpiry)
+for ii = 1:length(Market_US.datesExpiry)
     % Real prices
     real_price_call = Market_US.midCall(ii).value;
     real_price_put = Market_US.midPut(ii).value;
@@ -49,11 +51,11 @@ for ii = 1:2:length(Market_US.datesExpiry)
     e_call = (model_price_call - real_price_call)./real_price_call;
     e_put = (model_price_put - real_price_put)./real_price_put;
     % Store the errors
-    err(ii) = mean(abs(e_call))*100;
-    err(ii+1) = mean(abs(e_put))*100;
+    errCall(ii) = mean(abs(e_call))*100;
+    errPut(ii) = mean(abs(e_put))*100;
 end
 
 % Calculate the percentage error for the American market
-error_US = mean(err);
+error_US = mean([errCall; errPut]);
 
 end
