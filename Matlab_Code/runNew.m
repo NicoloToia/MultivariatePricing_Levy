@@ -107,8 +107,7 @@ Market_EU_filtered = Filter(Market_EU);
 % Create a new struct for the US market with the filtered options
 Market_US_filtered = Filter(Market_US);
 
-
-Market_EU_filtered = compute_ImpVol(Market_EU_filtered, TTM_EU, rates_EU);
+% Market_EU_filtered = compute_ImpVol(Market_EU_filtered, TTM_EU, rates_EU);
 
 % Plot the filtered implied volatility smiles for the EU market
 plot_ImpVol(Market_EU_filtered, 'EU OTM Implied Volatility Smile (Filtered)');
@@ -393,14 +392,14 @@ Market_EU_Black.sigma = sigmaB_EU;
 Market_US_Black.sigma = sigmaB_US;
 
 % Compute the covariance of the Brownian motions and match the historical correlation between the two indexes
-covBMs = HistCorr * sigmaB_EU * sigmaB_US;
-%!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MINCHIATA
-%!!!!!!!!!!!!!!!!!!!!!!!!!
-
-% print the results
-disp('---------------------------------------------------------------------')
-disp(['The covariance between the BMs is: ', num2str(covBMs)]);
-disp('---------------------------------------------------------------------')
+% covBMs = HistCorr * sigmaB_EU * sigmaB_US;
+% %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MINCHIATA
+% %!!!!!!!!!!!!!!!!!!!!!!!!!
+% 
+% % print the results
+% disp('---------------------------------------------------------------------')
+% disp(['The covariance between the BMs is: ', num2str(covBMs)]);
+% disp('---------------------------------------------------------------------')
 
 % compute the price of the derivative using the Black model
 
@@ -441,6 +440,9 @@ disp(['The average percentage error for the US market (Black Model) is: ', num2s
 
 
 %% PRICING USING BOTH MODELS: BLACK MODEL
+
+% sigmaB_EU = 0.152;
+% sigmaB_US = 0.1567;
 
 % Compute the price of the derivative with the following payoff:
 % Payoff = max(S1(t) - S1(0), 0)*I(S2(t) < 0.95*S2(0))
