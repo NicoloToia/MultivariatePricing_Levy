@@ -16,7 +16,7 @@ function [error_EU, error_US] = percentage_error_ImpVol(Model_EU, Model_US, Mark
 err = zeros(length(Market_EU.datesExpiry),1);
 
 % Cycle over EU expiries (OTM implied volatilities)
-for ii = 1:2:length(Market_EU.datesExpiry)
+for ii = 1:length(Market_EU.datesExpiry)
     % Real implied volatilities
     real_IV = Market_EU.OTM_ImpVol(ii).value;
     % Model implied volatilities
@@ -34,7 +34,7 @@ error_EU = mean(err);
 err = zeros(length(Market_US.datesExpiry),1);
 
 % Cycle over US expiries (OTM implied volatilities)
-for ii = 1:2:length(Market_US.datesExpiry)
+for ii = 1:length(Market_US.datesExpiry)
     % Real implied volatilities
     real_IV = Market_US.OTM_ImpVol(ii).value;
     % Model implied volatilities
