@@ -1,4 +1,4 @@
-function price = black_pricing(Market_EU, S0_US, sigma_EU, sigma_US, setDate, targetDate, MeanBMs, covBMs, N_sim)
+function price = black_pricing(Market_EU, S0_US, sigma_EU, sigma_US, setDate, targetDate, MeanBMs, rho, N_sim)
 % This function computes the price of a derivative with the following payoff:
 % Payoff = max(S1(t) - S1(0), 0)*I(S2(t) < 0.95*S2(0))
 %
@@ -10,7 +10,7 @@ function price = black_pricing(Market_EU, S0_US, sigma_EU, sigma_US, setDate, ta
 % discounts: market discounts
 % ttm: time to maturity
 % MeanBMs: mean of the Brownian motions
-% covBMs: covariance between the Brownian motions
+% rho: correlation between the Brownian motions
 % % N_sim: number of simulations
 %
 % OUTPUTS
@@ -29,7 +29,7 @@ F0_EU = S0_EU/discount;
 F0_US = S0_US/discount;
 
 % Define the Covariance matrix
-cov_matrix = [1 covBMs; covBMs 1];
+cov_matrix = [1 rho; rho 1];
 
 % Generate the random numbers
 Z = mvnrnd(MeanBMs, cov_matrix, N_sim);
