@@ -27,9 +27,10 @@ for ii = 1:length(maturity)
 
     % Compute call prices via black
     callPrices = blkprice(F0, strikes, rate, maturity(ii), sigma);
-    
+   
     % Put-call parity (Black model)
-    putPrices = callPrices - B0*(F0 - strikes);
+    putPrices = max(callPrices - B0*(F0 - strikes),0);
+    % the max is used to avoid negative prices, due to numeric
 
     % Extract the model prices for calls and puts
     % Find indexes
@@ -51,7 +52,7 @@ for ii = 1:length(maturity)
 
     % Compute the RMSE
     rmse_vett(ii) = rmse( [OTM_call_model; OTM_put_model], ...
-       [OTM_call_market; OTM_put_market]);
+       [OTM_call_market; OTM_put_market] );
 
 end
 
