@@ -63,4 +63,9 @@ fun = @(omega) (exp(zeroRate_US*ttm - 0.5*sigma_US^2*rho^2.*ttm + sigma_US*rho*o
 I = integral(fun, x_min, x_max);
 % price closed formula
 price_closed_formula = discount_US * S0_US *I;
+
+% disp the price of the derivative
+disp(['The price of the derivative (Closed Formula) is: ', num2str(price_closed_formula)]);
+
+
 end % end function closedFormula
