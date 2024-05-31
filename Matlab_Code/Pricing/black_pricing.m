@@ -1,4 +1,4 @@
-function price = black_pricing(Market_US, S0_EU, sigma_US, sigma_EU, setDate, targetDate, MeanBMs, rho, N_sim)
+function price = black_pricing(Market_US, Market_EU, setDate, targetDate, MeanBMs, rho, N_sim)
 % This function computes the price of a derivative with the following payoff:
 % Payoff = max(S1(t) - S1(0), 0)*I(S2(t) < 0.95*S2(0))
 %
@@ -17,16 +17,29 @@ function price = black_pricing(Market_US, S0_EU, sigma_US, sigma_EU, setDate, ta
 % price: price of the derivative
 
 % Recall variables from the market data
+% Import the spot prices
 S0_US = Market_US.spot;
-Expiries = datenum([Market_US.datesExpiry]');
-B_bar = [Market_US.B_bar.value]';
+S0_EU = Market_EU.spot;
+% Import the expiries
+Expiries_US = datenum([Market_US.datesExpiry]');
+Expiries_EU = datenum([Market_EU.datesExpiry]');
+% Import the market discounts B_bar
+B_bar_US = [Market_US.B_bar.value]';
+B_bar_EU = [Market_EU.B_bar.value]';
+% Import the calibrated volatilities
+sigma_US = Market_US.sigma;
+sigma_EU = Market_EU.sigma;
 
 % Compute the discount
-discount = intExtDF(B_bar, Expiries, targetDate);
+discount_US = intExtDF(B_bar_US, Expiries_US, targetDate);
+discount_EU = intExtDF(B_bar_EU, Expiries_EU, targetDate);
 
 % Compute the forward prices
-F0_US = S0_US/discount;
-F0_EU = S0_EU/discount;
+F0_US = S0_US/discount_US;
+F0_EU = S0_EU/discount_EU;
+
+% F0_EU = 4345;
+% F0_US = 4615;
 
 % Define the Covariance matrix
 cov_matrix = [1 rho; rho 1];
@@ -47,7 +60,7 @@ Indicator_function = (S1_EU < 0.95*S0_EU);
 payoff = max(S1_US - S0_US, 0).*Indicator_function;
 
 % Compute the price
-price = discount*mean(payoff);
+price = discount_US * mean(payoff);
 
 % Confidence interval
 a = 0.01;
