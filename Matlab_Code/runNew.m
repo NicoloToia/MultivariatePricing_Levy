@@ -56,13 +56,13 @@ Market_US = fwd_Bbar(Market_US);
 spot_EU = Market_EU.spot;
 spot_US = Market_US.spot;
 
-% Import the forward prices from the market data
-F0_EU = [Market_EU.F0.value]';
-F0_US = [Market_US.F0.value]';
-
 % Import the market discounts factors from the market data
 discounts_EU = [Market_EU.B_bar.value]';
 discounts_US = [Market_US.B_bar.value]';
+
+% Import the forward prices from the market data
+F0_EU = [Market_EU.F0.value]';
+F0_US = [Market_US.F0.value]';
 
 % Year convenction ACT/365
 ACT_365 = 3;
@@ -77,6 +77,9 @@ rates_US = -log(discounts_US)./TTM_US;
 
 %% COMPUTE IMPLIED VOLATILITIES & SELECT OUT OF THE MONEY (OTM) OPTIONS
 
+% for the last date of US market we use put call parity to compute the call prices
+%Market_US.midCall(end).value = Market_US.midPut(end).value + discounts_US(end)*(F0_US(end) - [Market_US.strikes(end).value]');
+
 % Compute the implied volatilities for the EU market
 Market_EU = compute_ImpVol(Market_EU, TTM_EU, rates_EU);
 
@@ -89,7 +92,7 @@ Market_EU = select_OTM(Market_EU);
 % Select the OTM implied volatilities for the US market
 Market_US = select_OTM(Market_US);
 
-% Plot the implied volatility smiles for the EU market
+%Plot the implied volatility smiles for the EU market
 plot_ImpVol(Market_EU, 'EU OTM Implied Volatility Smile');
 
 % Plot the implied volatility smiles for the US market
@@ -107,7 +110,6 @@ Market_EU_filtered = Filter(Market_EU);
 % Create a new struct for the US market with the filtered options
 Market_US_filtered = Filter(Market_US);
 
-% Market_EU_filtered = compute_ImpVol(Market_EU_filtered, TTM_EU, rates_EU);
 
 % Plot the filtered implied volatility smiles for the EU market
 plot_ImpVol(Market_EU_filtered, 'EU OTM Implied Volatility Smile (Filtered)');
@@ -123,7 +125,7 @@ w_US = spot_US/(spot_EU + spot_US);
 
 % Set the Fast Fourier Transform (FFT) parameters
 M_fft = 15;
-dz_fft = 0.005;
+dz_fft = 0.0025;
 alpha = 0.5;
 
 % Calibrate the NIG parameters for the two markets (EU and US)
@@ -156,10 +158,14 @@ b = [
 ];
 
 % Initial guess
-%p0 = [ 0.37 11.8 0.09 0.36 32 0.04];
+% p0 = [ 0.37 11.8 0.09 0.36 32 0.04];
 % p0 = [0.5 2 0.5 0.5 2 0.5];
-%p0 = [0.5 20 1 1 20 2];
-p0 = [0.05 0.05 0.05 0.05 0.05 0.05];
+% p0 = [0.5 20 1 1 20 2];
+% p0 = [0.05 0.05 0.05 0.05 0.05 0.05];
+
+p0 = [0.05 0.005 0.05 0.05 0.005 0.05];
+
+% p0 = [0.001 0.001 -0.001 0.001 0.001 -0.001];
 
 
 % Non linear constraints
@@ -169,13 +175,18 @@ options = optimset('Display', 'iter');
 % options = optimoptions('fmincon', 'Display', 'off');
 
 % Optimization
-%calibrated_param = fmincon(obj_fun, p0, A, b, [], [], [], [], const, options);
+calibrated_param = fmincon(obj_fun, p0, A, b, [], [], [], [], const, options);
 % M = 15, dz = 0.0005
 % calibrated_param = [0.11908 0.0063921 0.018383 0.11747 0.009144 0.015161];
 % M = 15, dz = 0.005
- calibrated_param = [0.11991 0.0024632 0.021422 0.10851 0.0019843 0.021599];
+% calibrated_param = [0.11991 0.0024632 0.021422 0.10851 0.0019843 0.021599];
 
-% End elapse time
+% Loro phi
+% calibrated_param = [0.12661 0.49259 -0.18474 0.1445 2.1816 -0.10019];
+
+% calibrated_param = [0.124591 0.825924 -0.162083 0.155781 3.829511 -0.094116];
+
+% End elapse time 
 toc
 
 % print the results
@@ -290,7 +301,7 @@ disp(['The average percentage error for the US market is: ', num2str(percentage_
 %% PLOT THE MODEL CALIBRATED PRICES VERSUS REAL PRICES FOR EACH EXPIRY
 
 % Plot the model prices for the EU market versus real prices for each expiry
-plot_model_prices(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Prices vs EU Real Prices');
+% plot_model_prices(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Prices vs EU Real Prices');
 
 % Plot the model prices for the US market versus real prices for each expiry
 %plot_model_prices(Market_US_calibrated, Market_US_filtered, 'US Market Model Prices vs US Real Prices');
@@ -323,15 +334,16 @@ disp(['The average percentage error for the US market (Implied Volatility) is: '
 %% PLOT IMPLIED VOLATILITIES FOR THE CALIBRATED PRICES
 
 % Plot the model implied volatilities versus the market implied volatilities for the EU market
-plot_model_ImpVol(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Implied Volatilities vs EU Market Implied Volatilities');
+%plot_model_ImpVol(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Implied Volatilities vs EU Market Implied Volatilities');
 
 % Plot the model implied volatilities versus the market implied volatilities for the US market
-%plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
+% plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
+
 
 %%  ESTIMATE HISTORICAL CORRELATION BETWEEN THE TWO INDExES
 
 % Plot the returns of the two markets yearly and daily
-plot_returns(Market_EU, Market_US, Returns);
+% plot_returns(Market_EU, Market_US, Returns);
 
 % Compute the historical correlation between the two markets with the yearly returns
 HistCorr = corr(Returns.Annually(:,2), Returns.Annually(:,1));
@@ -409,8 +421,7 @@ for ii = 1:length(Market_EU_filtered.datesExpiry)
         % Compute the price of the derivative using the Black model use blk built in function and save in in a new struct
     [call , put] = blkprice(Market_EU_filtered.F0(ii).value, Market_EU_filtered.strikes(ii).value, rates_EU(ii), TTM_EU(ii), sigmaB_EU);
     Market_EU_Black.midCall(ii).value = call';
-    Market_EU_Black.midPut(ii).value = put';
-    
+    Market_EU_Black.midPut(ii).value = put';  
 end
 
 % US market
@@ -461,8 +472,17 @@ MeanBMs = [0;
 N_sim = 1e7;
 
 % Compute the price of the derivative using the Black model
-price_black = black_pricing(Market_EU_calibrated, spot_US, sigmaB_EU, sigmaB_US, settlement, targetDate, MeanBMs, HistCorr, N_sim);
+price_black = black_pricing(Market_US_Black, Market_EU_Black, settlement, targetDate, MeanBMs, HistCorr, N_sim);
 
+%%
 % Compute the price of the derivative using the Lévy model
-derivativePrice_MC = levy_pricing(Market_EU_calibrated, spot_US, settlement, targetDate, alpha,...
-                                    kappa_EU, kappa_US, sigma_EU, sigma_US, theta_EU, theta_US, N_sim);
+price_levy = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
+                                    alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, N_sim);
+
+%%
+% price via the semi closed formula
+price_closed_formula = closedFormula(Market_US_Black, Market_EU_Black, settlement, targetDate, HistCorr);
+
+%%
+% price via the semi closed formula
+price_closed_formula = closedFormula(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, HistCorr);
