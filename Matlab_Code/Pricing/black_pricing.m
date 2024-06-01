@@ -38,6 +38,9 @@ discount_EU = intExtDF(B_bar_EU, Expiries_EU, targetDate);
 F0_US = S0_US/discount_US;
 F0_EU = S0_EU/discount_EU;
 
+% F0_EU = interp1(datenum(Market_EU.datesExpiry'), [Market_EU.F0.value]', targetDate);
+% F0_US = interp1(datenum(Market_US.datesExpiry'), [Market_US.F0.value]', targetDate);
+
 % F0_EU = 4345;
 % F0_US = 4615;
 
