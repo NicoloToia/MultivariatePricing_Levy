@@ -17,15 +17,16 @@ function callPrices = callIntegral(B0, F0, alpha, sigma, kappa, eta, t, log_mone
 %   callPrices: price of the call option (same size as log_moneyness)
 
 % % Compute the characteristic function
-phi = @(xi) exp(t.*(1/kappa * (1 - sqrt(1 - 2i .* xi .* kappa .* eta + xi.^2 .* kappa .* sigma.^2))) ...
-    - t./kappa * (1-sqrt(1-2.*kappa.*eta - kappa.*sigma .^2))); 
-
 % phi = @(xi) exp(t.*(1/kappa * (1 - sqrt(1 - 2i .* xi .* kappa .* eta + xi.^2 .* kappa .* sigma.^2))) ...
-%     - xi .* 1i .* t./kappa * (1-sqrt(1-2.*kappa.*eta - kappa.*sigma .^2))); 
+%     - t./kappa * (1-sqrt(1-2.*kappa.*eta - kappa.*sigma .^2))); 
+
+phi = @(xi) exp(t.*(1/kappa * (1 - sqrt(1 - 2i .* xi .* kappa .* eta + xi.^2 .* kappa .* sigma.^2))) ...
+    - xi .* 1i .* t./kappa * (1-sqrt(1-2.*kappa.*eta - kappa.*sigma .^2))); 
 
 % Compute the integral with the flag
 if strcmp(flag, 'FFT')
     I = integralFFT(phi, M, dz, log_moneyness);
+    
 elseif strcmp(flag, 'quad')
     I = integralQuad(phi, M, dz, log_moneyness);
 else
