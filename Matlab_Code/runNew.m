@@ -125,7 +125,7 @@ w_US = spot_US/(spot_EU + spot_US);
 
 % Set the Fast Fourier Transform (FFT) parameters
 M_fft = 15;
-dz_fft = 0.0025;
+dz_fft = 0.0010;
 alpha = 0.5;
 
 % Calibrate the NIG parameters for the two markets (EU and US)
@@ -163,9 +163,15 @@ b = [
 % p0 = [0.5 20 1 1 20 2];
 % p0 = [0.05 0.05 0.05 0.05 0.05 0.05];
 
-p0 = [0.05 0.005 0.05 0.05 0.005 0.05];
+% p0 = [0.1 0.1 -0.1 0.1 0.1 -0.1];
+
+% p0 = [0.05 0.005 0.05 0.05 0.005 0.05];
 
 % p0 = [0.001 0.001 -0.001 0.001 0.001 -0.001];
+
+% p0 = [0.13 2 -0.1 0.13 2 -0.1];
+
+p0 = [0.15 0.3 -0.5 0.15 0.3 -0.5];
 
 
 % Non linear constraints
@@ -182,8 +188,6 @@ calibrated_param = fmincon(obj_fun, p0, A, b, [], [], [], [], const, options);
 % calibrated_param = [0.11991 0.0024632 0.021422 0.10851 0.0019843 0.021599];
 
 % Loro phi
-% calibrated_param = [0.12661 0.49259 -0.18474 0.1445 2.1816 -0.10019];
-
 % calibrated_param = [0.124591 0.825924 -0.162083 0.155781 3.829511 -0.094116];
 
 % End elapse time 
@@ -230,7 +234,6 @@ Market_US_calibrated.B_bar = Market_US_filtered.B_bar;
 % nu1 = nu(1)
 % nu2 = nu(2)
 % nuZ = nu(3)
-
 % Compute the historical correlation between the two markets
 corrHist = corr(Returns.Annually(:,2), Returns.Annually(:,1));
 
@@ -304,7 +307,7 @@ disp(['The average percentage error for the US market is: ', num2str(percentage_
 % plot_model_prices(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Prices vs EU Real Prices');
 
 % Plot the model prices for the US market versus real prices for each expiry
-%plot_model_prices(Market_US_calibrated, Market_US_filtered, 'US Market Model Prices vs US Real Prices');
+% plot_model_prices(Market_US_calibrated, Market_US_filtered, 'US Market Model Prices vs US Real Prices');
 
 
 %% COMPUTE IMPLIED VOLATILITIES FOR THE CALIBRATED PRICES
@@ -334,7 +337,7 @@ disp(['The average percentage error for the US market (Implied Volatility) is: '
 %% PLOT IMPLIED VOLATILITIES FOR THE CALIBRATED PRICES
 
 % Plot the model implied volatilities versus the market implied volatilities for the EU market
-%plot_model_ImpVol(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Implied Volatilities vs EU Market Implied Volatilities');
+% plot_model_ImpVol(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Implied Volatilities vs EU Market Implied Volatilities');
 
 % Plot the model implied volatilities versus the market implied volatilities for the US market
 % plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
