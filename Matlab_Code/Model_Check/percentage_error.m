@@ -25,11 +25,11 @@ for ii = 1:length(Market_EU.datesExpiry)
     model_price_call = Model_EU.midCall(ii).value;
     model_price_put = Model_EU.midPut(ii).value;
     % Errors
-    e_call = (model_price_call - real_price_call)./real_price_call;
-    e_put = (model_price_put - real_price_put)./real_price_put;
+    e_call = norm(model_price_call - real_price_call)./norm(real_price_call);
+    e_put = norm(model_price_put - real_price_put)./norm(real_price_put);
     % Store the errors
-    errCall(ii) = mean(abs(e_call))*100;
-    errPut(ii) = mean(abs(e_put))*100;
+    errCall(ii) = e_call*100;
+    errPut(ii) = e_put*100;
 end
 
 % Calculate the percentage error for the European market
@@ -48,11 +48,11 @@ for ii = 1:length(Market_US.datesExpiry)
     model_price_call = Model_US.midCall(ii).value;
     model_price_put = Model_US.midPut(ii).value;
     % Errors
-    e_call = (model_price_call - real_price_call)./real_price_call;
-    e_put = (model_price_put - real_price_put)./real_price_put;
+    e_call = norm(model_price_call - real_price_call)./norm(real_price_call);
+    e_put = norm(model_price_put - real_price_put)./norm(real_price_put);
     % Store the errors
-    errCall(ii) = mean(abs(e_call))*100;
-    errPut(ii) = mean(abs(e_put))*100;
+    errCall(ii) = e_call*100;
+    errPut(ii) = e_put*100;
 end
 
 % Calculate the percentage error for the American market
