@@ -1,4 +1,4 @@
-function price = levy_prcinig(Market_US, Market_EU, settlement, targetDate, ...
+function price = levy_pricing(Market_US, Market_EU, settlement, targetDate, ...
                                 alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, N_sim)
 
 % This function computes the price of a derivative using a Monte Carlo simulation under Lévy processes
@@ -37,6 +37,10 @@ discount_EU = intExtDF(B_bar_EU, Expiries_EU, targetDate);
 % Compute the forward prices
 F0_US = S0_US/discount_US;
 F0_EU = S0_EU/discount_EU; % dscount sbagliato
+
+% find F0 of the two markets by interpolation
+% F0_EU = interp1(datenum(Market_EU.datesExpiry'), [Market_EU.F0.value]', targetDate);
+% F0_US = interp1(datenum(Market_US.datesExpiry'), [Market_US.F0.value]', targetDate);
 
 % più o meno giusti ma come li otteniamo?????????
 % F0_EU = 4345;
