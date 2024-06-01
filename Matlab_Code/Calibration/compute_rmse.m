@@ -38,9 +38,9 @@ for ii = 1:length(TTM)
     log_moneyness = log(F0./strikes);
 
     % Compute the call prices via Lewis formula
-    % callPrices = callIntegral(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz, 'FFT');
+    callPrices = callIntegral(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz, 'FFT');
 
-    callPrices = callIntegral_fft(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz);
+    % callPrices = callIntegral_fft(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz);
 
     % Compute the put prices via put-call parity
     putPrices = callPrices - B0*(F0 - strikes);
