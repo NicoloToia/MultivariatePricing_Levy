@@ -22,9 +22,9 @@ for ii = 1:length(Market_EU.datesExpiry)
     % Model implied volatilities
     model_IV = Model_EU.OTM_ImpVol(ii).value;
     % errors
-    e = (model_IV - real_IV)./real_IV;
+    e = norm(model_IV - real_IV)/norm(real_IV);
     % Store the errors
-    err(ii) = mean(abs(e))*100;
+    err(ii) = e*100;
 end
 
 % Calculate the percentage error for the European market
@@ -40,9 +40,9 @@ for ii = 1:length(Market_US.datesExpiry)
     % Model implied volatilities
     model_IV = Model_US.OTM_ImpVol(ii).value;
     % errors
-    e = (model_IV - real_IV)./real_IV;
+    e = norm(model_IV - real_IV)/norm(real_IV);
     % Store the errors
-    err(ii) = mean(abs(e))*100;
+    err(ii) = e*100;
 end
 
 % Calculate the percentage error for the American market
