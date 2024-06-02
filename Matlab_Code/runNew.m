@@ -39,6 +39,7 @@ clear Markets;
 % Load the market returns
 load('SPXSX5Ereturns.mat');
 
+
 %% COMPUTE DISCOUNT FACTORS AND FORWARD PRICES FROM OPTION DATA
 
 % Compute the market discount factors and forward prices
@@ -74,6 +75,7 @@ TTM_US = yearfrac(settlement, Market_US.datesExpiry, ACT_365);
 % Compute the market zero rates
 rates_EU = -log(discounts_EU)./TTM_EU;
 rates_US = -log(discounts_US)./TTM_US;
+
 
 %% COMPUTE IMPLIED VOLATILITIES & SELECT OUT OF THE MONEY (OTM) OPTIONS
 
@@ -173,6 +175,8 @@ b = [
 
 p0 = [0.15 0.3 -0.5 0.15 0.3 -0.5];
 
+% p0 = [0.15 0.3 0.1 0.15 0.3 0.1];
+
 
 % Non linear constraints
 const = @(x) constraint(x, alpha);
@@ -190,6 +194,14 @@ calibrated_param = fmincon(obj_fun, p0, A, b, [], [], [], [], const, options);
 % Loro phi
 % calibrated_param = [0.124591 0.825924 -0.162083 0.155781 3.829511 -0.094116];
 
+% nostri param
+% calibrated_param = [0.12535 0.52274 -0.1761 0.14199 2.0056 -0.10184];
+
+% calib const add
+% calibrated_param = [0.1556 0.19068 0.00067435 0.14106 0.22207 0.00056648];
+
+% calibrated_param = [0.13037 0.60359 -0.16619 0.1485 2.30733 -0.096825];
+
 % End elapse time 
 toc
 
@@ -203,6 +215,16 @@ disp(['sigma_US = ', num2str(calibrated_param(4))]);
 disp(['kappa_US = ', num2str(calibrated_param(5))]);
 disp(['theta_US = ', num2str(calibrated_param(6))]);
 disp('---------------------------------------------------------------------')
+
+% Rename the calibrated parameters for the EU market
+sigma_EU = calibrated_param(1);
+kappa_EU = calibrated_param(2);
+theta_EU = calibrated_param(3);
+
+% Rename the calibrated parameters for the US market
+sigma_US = calibrated_param(4);
+kappa_US = calibrated_param(5);
+theta_US = calibrated_param(6);
 
 %% NEW STRUCT FOR MARKET MODEL
 
@@ -231,59 +253,67 @@ Market_US_calibrated.B_bar = Market_US_filtered.B_bar;
 
 %% CALIBRATE THE SYSTEMATIC PARAMETER NU_Z
 
-% nu1 = nu(1)
-% nu2 = nu(2)
-% nuZ = nu(3)
-% Compute the historical correlation between the two markets
+% nu_US = nu(1);
+% nu_EU = nu(2);
+% nu_Z = nu(3);
+
+% compute the historical correlation between the two indexes
 corrHist = corr(Returns.Annually(:,2), Returns.Annually(:,1));
+% define the objective function
+obFun = @(nu) ( sqrt( (nu(1)*nu(2)) / ((nu(1) + nu(3)) * (nu(2) + nu(3)))) - corrHist )^2;
 
-% Define the system of equations
-eqn1 = @(nu) calibrated_param(2) - (nu(1)*nu(3))/(nu(1) + nu(3));
-eqn2 = @(nu) calibrated_param(5) - (nu(2)*nu(3))/(nu(2) + nu(3));
+% define the constraints
+A = [-1 0 0; 
+      0 -1 0; 
+      0 0 -1]; 
+b = [0; 0; 0];
+Aeq = []; 
+beq = [];
+lb = zeros(1,3); 
+ub = [];
+constNU = @(nus) cosnt_Nu(nus, kappa_EU,kappa_US);
+% options
+options = optimoptions('fmincon', 'Display', 'off');
+% calibration of the parameters
+nu_calibrated = fmincon(obFun, ones(1,3), A, b, Aeq, beq, lb, ub, constNU, options);
 
-% Define the correlation function
-rho = @(nu) corrHist - sqrt( (nu(1)*nu(2)) / ((nu(1) + nu(3)) * (nu(2) + nu(3))) );  
+nu_US = nu_calibrated(1);
+nu_EU = nu_calibrated(2);
+nu_Z = nu_calibrated(3);
 
-% Define the system of equations and solve it to find the calibrated parameter nu_z
-system_eq = @(nu) [eqn1(nu), eqn2(nu), rho(nu)];
-options = optimoptions('fsolve', 'Display', 'off');
-nu_calibrated = fsolve(system_eq, ones(3,1), options);
-
-% Compute the calibrated parameter nu_z using an alternative method
-nu_z = sqrt(calibrated_param(2)*calibrated_param(5))/corrHist;
-
-% disp the results
+% prnt the results
 disp('---------------------------------------------------------------------')
-disp('The calibrated parameters are:');
-disp(['nu1 = ', num2str(nu_calibrated(1))]);
-disp(['nu2 = ', num2str(nu_calibrated(2))]);
-disp(['nuZ = ', num2str(nu_calibrated(3))]);
+disp(['nu_EU = ', num2str(nu_EU)]);
+disp(['nu_US = ', num2str(nu_US)]);
+disp(['nu_Z = ', num2str(nu_Z)]);
+disp('---------------------------------------------------------------------')
 
-disp(['nuZ2 = ', num2str(nu_z)]);
+%%
+% Compute the calibrated parameter nu_z using an alternative method
+nu_Z = sqrt(calibrated_param(2)*calibrated_param(5))/corrHist;
+% nu_z = 6.985087;
 
+% nu2 = fzero(funNU2, 0.1);
+nu_EU = (kappa_EU*nu_Z)/(nu_Z - kappa_EU);
+nu_US = (kappa_US*nu_Z)/(nu_Z - kappa_US);
+
+% prnt the results
+disp('---------------------------------------------------------------------')
+disp(['nu_EU = ', num2str(nu_EU)]);
+disp(['nu_US = ', num2str(nu_US)]);
+disp(['nu_Z = ', num2str(nu_Z)]);
+disp('---------------------------------------------------------------------')
 
 %% COMPUTE PRICES VIA CALIBRATED PARAMETERS
 
 % Choose the flag for the pricing method
 flag = 'FFT';
-%flag = 'quad';
-
-% Rename the calibrated parameters for the EU market
-sigma_EU = calibrated_param(1);
-kappa_EU = calibrated_param(2);
-theta_EU = calibrated_param(3);
-
-% Rename the calibrated parameters for the US market
-sigma_US = calibrated_param(4);
-kappa_US = calibrated_param(5);
-theta_US = calibrated_param(6);
 
 % Compute the prices for EU market
 Market_EU_calibrated = compute_prices(Market_EU_calibrated, TTM_EU, M_fft, dz_fft, alpha, flag);
 
 % Compute the prices for US market
 Market_US_calibrated = compute_prices(Market_US_calibrated, TTM_US, M_fft, dz_fft, alpha, flag);
-
 
 %% CHECK FOR NEGATIVE PRICES
 
@@ -308,7 +338,6 @@ disp(['The average percentage error for the US market is: ', num2str(percentage_
 
 % Plot the model prices for the US market versus real prices for each expiry
 % plot_model_prices(Market_US_calibrated, Market_US_filtered, 'US Market Model Prices vs US Real Prices');
-
 
 %% COMPUTE IMPLIED VOLATILITIES FOR THE CALIBRATED PRICES
 
@@ -342,7 +371,6 @@ disp(['The average percentage error for the US market (Implied Volatility) is: '
 % Plot the model implied volatilities versus the market implied volatilities for the US market
 % plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
 
-
 %%  ESTIMATE HISTORICAL CORRELATION BETWEEN THE TWO INDExES
 
 % Plot the returns of the two markets yearly and daily
@@ -371,7 +399,6 @@ Market_US_Black.strikes = Market_US_filtered.strikes;
 Market_US_Black.spot = Market_US_filtered.spot;
 Market_US_Black.F0 = Market_US_filtered.F0;
 Market_US_Black.B_bar = Market_US_filtered.B_bar;
-
 
 %% Alternative Model: BLACK CALIBRATION
 
@@ -416,8 +443,6 @@ Market_US_Black.sigma = sigmaB_US;
 % disp(['The covariance between the BMs is: ', num2str(covBMs)]);
 % disp('---------------------------------------------------------------------')
 
-% compute the price of the derivative using the Black model
-
 % EU market
 % cycle through the expiries
 for ii = 1:length(Market_EU_filtered.datesExpiry)
@@ -455,9 +480,6 @@ disp(['The average percentage error for the US market (Black Model) is: ', num2s
 
 %% PRICING USING BOTH MODELS: BLACK MODEL
 
-% sigmaB_EU = 0.152;
-% sigmaB_US = 0.1567;
-
 % Compute the price of the derivative with the following payoff:
 % Payoff = max(S1(t) - S1(0), 0)*I(S2(t) < 0.95*S2(0))
 % where S1(t) and S2(t) are the prices of the two indexes at time t
@@ -488,4 +510,9 @@ price_closed_formula = closedFormula(Market_US_Black, Market_EU_Black, settlemen
 
 %%
 % price via the semi closed formula
-price_closed_formula = closedFormula(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, HistCorr);
+% price_closed_formula = closedFormula(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, HistCorr);
+%%
+% alternative
+
+price = levy_pricing_alternative(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
+            theta_US, theta_EU, nu_US, nu_EU, nu_Z, N_sim);
