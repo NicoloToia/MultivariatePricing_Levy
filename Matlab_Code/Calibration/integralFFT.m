@@ -39,11 +39,14 @@ I = prefactor .* FFT;
 
 %check that the immaginary part is close to zero
 % %if not plot the value of immaginary part (10 ^  is a threshold)
-% if max(abs(imag(I))) > 1
-%     figure;
-%     plot(imag(I))
-%     error('Immaginary part of the integral is not close to zero')   
-% end
+if max(abs(imag(I))) > 10^-3
+    % figure;
+    % plot(imag(I))
+    warning('Immaginary part of the integral is not close to zero')
+    % display the value of the immaginary part and the iteration number
+    disp(['Immaginary part of the integral is: ', num2str(max(abs(imag(I))))])
+    disp(['Iteration number: ', num2str(M)])  
+end
 
 % get only the real part
 I = real(I);
