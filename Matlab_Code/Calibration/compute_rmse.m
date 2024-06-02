@@ -62,28 +62,9 @@ for ii = 1:length(TTM)
     % Put prices for OTM options
     OTM_put_market = put(1:OTM_put_index);
 
-    
-    % % Extract the model prices for calls and puts
-    % % Call prices for OTM options
-    % OTM_call_model_long = callPrices.*(strikes > F0);
-    % OTM_call_model = OTM_call_model_long(OTM_call_model_long~=0);
-
-    % % Put prices for OTM options
-    % OTM_put_model_long = putPrices.*(strikes <= F0);
-    % OTM_put_model = OTM_put_model_long(OTM_put_model_long~=0);
-
-    % % Extract the market prices for calls and puts
-    % % Call prices for OTM options
-    % OTM_call_market_long = call.*(strikes > F0);
-    % OTM_call_market = OTM_call_market_long(OTM_call_market_long~=0);
-
-    % % Put prices for OTM options
-    % OTM_put_market_long = put.*(strikes <= F0);
-    % OTM_put_market = OTM_put_market_long(OTM_put_market_long~=0);
-    
     % ******************************************************************
-    % w_call = Market.Volume_call(ii).volume'; 
-    % w_put = Market.Volume_put(ii).volume';
+    % w_call = Market.Volume_call(ii).volume; 
+    % w_put = Market.Volume_put(ii).volume;
 
     % % Pesi
     % pes_put_long = w_put.*(strikes <= F0);
@@ -91,12 +72,12 @@ for ii = 1:length(TTM)
     % pes_call_long = w_call.*(strikes > F0);
     % pes_call = pes_call_long(pes_call_long~=0);
 
-    % w = [pes_call,pes_put];
+    % w = [pes_call;pes_put];
     % ******************************************************************
 
     % Compute the RMSE
-    % rmse_vett(ii) = rmse( [OTM_call_model, OTM_put_model], ...
-    %    [OTM_call_market, OTM_put_market], W = w );
+    % rmse_vett(ii) = rmse( [OTM_call_model; OTM_put_model], ...
+    %    [OTM_call_market; OTM_put_market], W = w );
 
     rmse_vett(ii) = rmse( [OTM_put_model; OTM_call_model], ...
     [OTM_put_market; OTM_call_market]);
