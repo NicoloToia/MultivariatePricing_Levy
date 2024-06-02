@@ -41,29 +41,21 @@ ttm = yearfrac(settlement, targetDate, ACT_365);
 rate_US = -log(discount_US)/ttm;
 rate_EU = -log(discount_EU)/ttm;
 
-% solve the non linear system
-eqn1 = @(param) kappa_US * theta_US - nu_Z * param(1) * param(3);
-eqn2 = @(param) kappa_EU * theta_EU - nu_Z * param(2) * param(3);
-
-eqn3 = @(param) kappa_US * sigma_US^2 - nu_Z * param(1)^2 *param(4);
-eqn4 = @(param) kappa_EU * sigma_EU^2 - nu_Z * param(2)^2 *param(4); 
-
-
-% Define the system of equations and solve it to find the calibrated parameter
-system_eq = @(param) [eqn1(param), eqn2(param), eqn3(param), eqn4(param)];
-options = optimoptions('fsolve', 'Display', 'off');
-param_calibrated = fsolve(system_eq, ones(4,1), options);
-
-%%
+% Define the optimization variables
 x = optimvar('x',4);
+
+% a_US = x(1);
+% a_EU = x(2);
+% Beta_Z = x(3);
+% gamma_Z = x(4);
 
 eq1 = x(1) * x(3) - (kappa_US * theta_US / nu_Z) == 0;
 eq2 = x(2) * x(3) - (kappa_EU * theta_EU / nu_Z) == 0;
 
-% Conditions (9.2) BB
 eq3 = kappa_US * sigma_US^2 - nu_Z * x(1)^2 * x(4) ^2  == 0;
 eq4 = kappa_EU * sigma_EU^2 - nu_Z * x(2)^2 * x(4) ^2  == 0;
 
+% Build a structure for the system of equations
 prob = eqnproblem;
 prob.Equations.eq1 = eq1;
 prob.Equations.eq2 = eq2;
@@ -71,22 +63,18 @@ prob.Equations.eq3 = eq3;
 prob.Equations.eq4 = eq4;
 
 % Initial value
-x0.x = 3*ones(4,1);
+x0.x = ones(4,1);
 
-% Solution
+% Solve the system of equations
 sol = solve(prob,x0);
 
-param_calibrated(1) = sol.x(1);
-param_calibrated(2) = sol.x(2);
-param_calibrated(3) = sol.x(3);
-param_calibrated(4) = sol.x(4);
+% Extract the calibrated parameters
+a_US = sol.x(1);
+a_EU = sol.x(2);
+Beta_Z = sol.x(3);
+gamma_Z = sol.x(4);
 
 %%
-a_US = param_calibrated(1);
-a_EU = param_calibrated(2);
-Beta_Z = param_calibrated(3);
-gamma_Z = param_calibrated(4);
-
 
 spot_US = Market_US.spot;
 spot_EU = Market_EU.spot;
@@ -106,10 +94,10 @@ Beta_EU = theta_EU - a_EU * Beta_Z;
 gamma_US = sqrt(sigma_US^2 - a_US^2*gamma_Z^2);
 gamma_EU = sqrt(sigma_EU^2 - a_EU^2*gamma_Z^2);
 
-Y_US = -gamma_US^2 * Beta_US .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
-Y_EU = -gamma_EU^2 * Beta_EU .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
+Y_US = -gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
+Y_EU = -gamma_EU^2 * (0.5 + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
 
-Z = -gamma_Z^2 * Beta_Z .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
+Z = -gamma_Z^2 * (0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
 
 % Marginal processes
 X_US = Y_US + a_US * Z;
