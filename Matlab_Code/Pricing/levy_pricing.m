@@ -1,6 +1,5 @@
 function price = levy_pricing(Market_US, Market_EU, settlement, targetDate, ...
                                 alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, N_sim)
-
 % This function computes the price of a derivative using a Monte Carlo simulation under Lévy processes
 % 
 % INPUTS
@@ -50,14 +49,6 @@ F0_EU = S0_EU/discount_EU; % dscount sbagliato
 ACT_365 = 3;
 ttm = yearfrac(settlement, targetDate, ACT_365);
 
-% compute the Laplace exponent EU & US
-ln_L_US = @(omega_US) ttm/kappa_US * (1 - alpha)/alpha * ...
-    (1 - (1 + (omega_US .* kappa_US * sigma_US^2)/(1-alpha)).^alpha );
-
-ln_L_EU = @(omega_EU) ttm/kappa_EU * (1 - alpha)/alpha * ...
-    (1 - (1 + (omega_EU .* kappa_EU * sigma_EU^2)/(1-alpha)).^alpha );
-    
-
 % draw the standard normal random variables
 g = mvnrnd([0; 0], [1 0.801; 0.801 1], N_sim);
 % g = randn(N_sim, 2);
@@ -65,29 +56,15 @@ g = mvnrnd([0; 0], [1 0.801; 0.801 1], N_sim);
 G_EU = random('inversegaussian', 1, ttm/kappa_EU, N_sim, 1);
 G_US = random('inversegaussian', 1, ttm/kappa_US, N_sim, 1);
 
-% ft_EU = sqrt(ttm) * sigma_EU * sqrt(G_EU) .* g(:,1) - (0.5 + theta_EU) * ttm * sigma_EU^2 * G_EU - ln_L_EU(theta_EU)...
-%             - ttm./kappa_EU * (1-sqrt(1-2.*kappa_EU.*theta_EU - kappa_EU.*sigma_EU .^2));
-
-% ft_US = sqrt(ttm) * sigma_US * sqrt(G_US) .* g(:,2) - (0.5 + theta_US) * ttm * sigma_US^2 * G_US - ln_L_US(theta_US)...
-%             - ttm./kappa_US * (1-sqrt(1-2.*kappa_US.*theta_US - kappa_US.*sigma_US .^2));
-
-% ft_EU = sqrt(ttm) * sigma_EU * sqrt(G_EU) .* g(:,1) - (0.5 + theta_EU) * ttm * sigma_EU^2 * G_EU - ln_L_EU(theta_EU)...
-%                 + ttm./kappa_EU * ( sqrt(1 - 2*kappa_EU) - 1 );
-
-% ft_US = sqrt(ttm) * sigma_US * sqrt(G_US) .* g(:,2) - (0.5 + theta_US) * ttm * sigma_US^2 * G_US - ln_L_US(theta_US)...
-%                 + ttm./kappa_US * ( sqrt(1 - 2*kappa_US) - 1 );
-
 ft_EU = sqrt(ttm) * sigma_EU * sqrt(G_EU) .* g(:,1) - (0.5 + theta_EU) * ttm * sigma_EU^2 * G_EU...
             - ttm./kappa_EU * (1-sqrt(1-2.*kappa_EU.*theta_EU - kappa_EU.*sigma_EU .^2));
 
 ft_US = sqrt(ttm) * sigma_US * sqrt(G_US) .* g(:,2) - (0.5 + theta_US) * ttm * sigma_US^2 * G_US...
             - ttm./kappa_US * (1-sqrt(1-2.*kappa_US.*theta_US - kappa_US.*sigma_US .^2));
 
-
 S1_US = F0_US * exp(ft_US); 
 
 S1_EU = F0_EU * exp(ft_EU); 
-
 
 % indicator function US
 Indicator_function = (S1_EU < 0.95 * S0_EU);
