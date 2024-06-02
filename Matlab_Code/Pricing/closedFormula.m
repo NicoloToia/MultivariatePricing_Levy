@@ -65,7 +65,9 @@ I = integral(fun, x_min, x_max);
 price_closed_formula = discount_US * S0_US *I;
 
 % disp the price of the derivative
+disp(' ');
 disp(['The price of the derivative (Closed Formula) is: ', num2str(price_closed_formula)]);
+disp(' ');
 
 
 end % end function closedFormula
