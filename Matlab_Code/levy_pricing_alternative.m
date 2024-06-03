@@ -94,10 +94,14 @@ Beta_EU = theta_EU - a_EU * Beta_Z;
 gamma_US = sqrt(sigma_US^2 - a_US^2*gamma_Z^2);
 gamma_EU = sqrt(sigma_EU^2 - a_EU^2*gamma_Z^2);
 
-Y_US = -gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
-Y_EU = -gamma_EU^2 * (0.5 + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
+drift_compensator_YEU = -1/nu_EU * (1 - sqrt( 1 - 2 * nu_EU * Beta_EU - nu_EU * gamma_EU^2));
+drift_compensator_YUS = -1/nu_US * (1 - sqrt( 1 - 2 * nu_US * Beta_US - nu_US * gamma_US^2));
+drift_compensator_Z   = -1/nu_Z  * (1 - sqrt( 1 - 2 * nu_Z * Beta_Z - nu_Z * gamma_Z^2));
 
-Z = -gamma_Z^2 * (0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
+Y_US = - gamma_US^2 * (+ Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
+Y_EU = - gamma_EU^2 * ( + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
+
+Z = - gamma_Z^2 * ( + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
 
 % Marginal processes
 X_US = Y_US + a_US * Z;

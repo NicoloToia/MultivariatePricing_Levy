@@ -27,17 +27,11 @@ for ii = 1:length(Market.datesExpiry)
     Market.OTM_ImpVol_put(ii).value = Market.ImpVol_put(ii).value(1:idx);
     Market.OTM_ImpVol_call(ii).value = Market.ImpVol_call(ii).value(idx+1:end);
     Market.OTM_ImpVol(ii).value = [Market.OTM_ImpVol_put(ii).value; Market.OTM_ImpVol_call(ii).value];
-
-    % volume(1:idx) = Market.Volume_put(ii).volume(1:idx);
-    % volume(idx+1:end) = Market.Volume_call(ii).volume(idx+1:end);
     
     % Check for NaN values in the implied volatilities
     if isnan(Market.OTM_ImpVol(ii).value)      
         error('NaN values in the implied volatilities');
     end
-
-    % add the volume to the OTM structure
-    %Market.OTM_ImpVol(ii).value = volume;
 
 end
 

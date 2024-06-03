@@ -51,6 +51,7 @@ Market_US = fwd_Bbar(Market_US);
 % Plot the forward prices (mid, Bid, Ask) for the US market
 %plot_fwd_prices(Market_US);
 
+
 %% CREATE AUXILIARY VARIABLES AND COMPUTE MARKET ZERO RATES
 
 % Import the spot price from the market data
@@ -108,15 +109,40 @@ Market_EU = sens_Delta(Market_EU, TTM_EU, rates_EU);
 Market_US = sens_Delta(Market_US, TTM_US, rates_US);
 
 % Create a new struct for the EU market with the filtered options
-Market_EU_filtered = Filter(Market_EU);
+Market_EU_filtereds = Filter(Market_EU);
 % Create a new struct for the US market with the filtered options
-Market_US_filtered = Filter(Market_US);
+Market_US_filtereds = Filter(Market_US);
 
 
 % Plot the filtered implied volatility smiles for the EU market
-plot_ImpVol(Market_EU_filtered, 'EU OTM Implied Volatility Smile (Filtered)');
+plot_ImpVol(Market_EU_filtereds, 'EU OTM Implied Volatility Smile (Filtered)');
 % Plot the filtered implied volatility smiles for the US market
-plot_ImpVol(Market_US_filtered, 'US OTM Implied Volatility Smile (Filtered)');
+plot_ImpVol(Market_US_filtereds, 'US OTM Implied Volatility Smile (Filtered)');
+
+% Compute the market discount factors and forward prices
+Market_EU_filtered = fwd_Bbar(Market_EU_filtereds);
+Market_US_filtered = fwd_Bbar(Market_US_filtereds);
+
+F0_EU = [Market_EU_filtered.F0.value]';
+F0_US = [Market_US_filtered.F0.value]';
+
+% Import the market discounts factors from the market data
+discounts_EU = [Market_EU_filtered.B_bar.value]';
+discounts_US = [Market_US_filtered.B_bar.value]';
+
+% Compute the market zero rates
+rates_EU = -log(discounts_EU)./TTM_EU;
+rates_US = -log(discounts_US)./TTM_US;
+
+% % change the F0 eu for the 10 11 aturity via interpolation and extrap for 13
+% F0_EU(10) = interp1([TTM_EU(9), TTM_EU(12)], [F0_EU(9), F0_EU(12)], TTM_EU(10));
+% F0_EU(11) = interp1([TTM_EU(9), TTM_EU(12)], [F0_EU(9), F0_EU(12)], TTM_EU(11));
+% F0_EU(13) = interp1([TTM_EU(1:12)], [F0_EU(1:12)], TTM_EU(13),'linear', 'extrap');
+% 
+% % modify the struct
+% for ii = 1:length(Market_EU_filtered.datesExpiry)
+%     Market_EU_filtered.F0(ii).value = F0_EU(ii);
+% end
 
 close all;
 %% CALIBRATION
@@ -127,7 +153,7 @@ w_US = spot_US/(spot_EU + spot_US);
 
 % Set the Fast Fourier Transform (FFT) parameters
 M_fft = 15;
-dz_fft = 0.0010;
+dz_fft = 0.0025;
 alpha = 0.5;
 
 % Calibrate the NIG parameters for the two markets (EU and US)
@@ -160,14 +186,12 @@ b = [
 ];
 
 % Initial guess
-% p0 = [ 0.37 11.8 0.09 0.36 32 0.04];
+
 % p0 = [0.5 2 0.5 0.5 2 0.5];
-% p0 = [0.5 20 1 1 20 2];
+
 % p0 = [0.05 0.05 0.05 0.05 0.05 0.05];
 
 % p0 = [0.1 0.1 -0.1 0.1 0.1 -0.1];
-
-% p0 = [0.05 0.005 0.05 0.05 0.005 0.05];
 
 % p0 = [0.001 0.001 -0.001 0.001 0.001 -0.001];
 
@@ -175,32 +199,32 @@ b = [
 
 p0 = [0.15 0.3 -0.5 0.15 0.3 -0.5];
 
-% p0 = [0.15 0.3 0.1 0.15 0.3 0.1];
+% p0 = [0.13 0.1 -0.1 0.16 0.1 -0.1];
 
 
 % Non linear constraints
 const = @(x) constraint(x, alpha);
+% lower bound
+lb = [0 0 -inf 0 0 -inf];
+
+ub = [inf 1 inf inf 1 inf];
+% lb = [];
+% ub = [];
 % options
 options = optimset('Display', 'iter');
 % options = optimoptions('fmincon', 'Display', 'off');
 
 % Optimization
-calibrated_param = fmincon(obj_fun, p0, A, b, [], [], [], [], const, options);
-% M = 15, dz = 0.0005
-% calibrated_param = [0.11908 0.0063921 0.018383 0.11747 0.009144 0.015161];
-% M = 15, dz = 0.005
-% calibrated_param = [0.11991 0.0024632 0.021422 0.10851 0.0019843 0.021599];
+calibrated_param = fmincon(obj_fun, p0, A, b, [], [], lb, ub, const, options);
 
 % Loro phi
-% calibrated_param = [0.124591 0.825924 -0.162083 0.155781 3.829511 -0.094116];
+% calibrated_param = [0.124591312025052 0.825923977978176 -0.162083449192270 0.155780648904408 3.82951110965306128 -0.094115856301092];
 
 % nostri param
 % calibrated_param = [0.12535 0.52274 -0.1761 0.14199 2.0056 -0.10184];
 
 % calib const add
 % calibrated_param = [0.1556 0.19068 0.00067435 0.14106 0.22207 0.00056648];
-
-% calibrated_param = [0.13037 0.60359 -0.16619 0.1485 2.30733 -0.096825];
 
 % End elapse time 
 toc
@@ -260,7 +284,7 @@ Market_US_calibrated.B_bar = Market_US_filtered.B_bar;
 % compute the historical correlation between the two indexes
 corrHist = corr(Returns.Annually(:,2), Returns.Annually(:,1));
 % define the objective function
-obFun = @(nu) ( sqrt( (nu(1)*nu(2)) / ((nu(1) + nu(3)) * (nu(2) + nu(3)))) - corrHist )^2;
+obFun = @(nu) ( sqrt( nu(1)*nu(2) / ((nu(1) + nu(3)) * (nu(2) + nu(3)))) - corrHist )^2;
 
 % define the constraints
 A = [-1 0 0; 
@@ -269,11 +293,14 @@ A = [-1 0 0;
 b = [0; 0; 0];
 Aeq = []; 
 beq = [];
-lb = zeros(1,3); 
+lb = [0 0 max(kappa_EU,kappa_US)]; 
 ub = [];
-constNU = @(nus) cosnt_Nu(nus, kappa_EU,kappa_US);
+
+constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU);
 % options
-options = optimoptions('fmincon', 'Display', 'off');
+% options = optimoptions('fmincon', 'Display', 'off');
+options = optimset('MaxFunEvals', 3e3, 'Display', 'iter');
+
 % calibration of the parameters
 nu_calibrated = fmincon(obFun, ones(1,3), A, b, Aeq, beq, lb, ub, constNU, options);
 
@@ -290,8 +317,8 @@ disp('---------------------------------------------------------------------')
 
 %%
 % Compute the calibrated parameter nu_z using an alternative method
-nu_Z = sqrt(calibrated_param(2)*calibrated_param(5))/corrHist;
-% nu_z = 6.985087;
+nu_Z = sqrt(kappa_EU*kappa_US)/corrHist;
+% nu_Z = 6.985087
 
 % nu2 = fzero(funNU2, 0.1);
 nu_EU = (kappa_EU*nu_Z)/(nu_Z - kappa_EU);
@@ -369,7 +396,7 @@ disp(['The average percentage error for the US market (Implied Volatility) is: '
 % plot_model_ImpVol(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Implied Volatilities vs EU Market Implied Volatilities');
 
 % Plot the model implied volatilities versus the market implied volatilities for the US market
-% plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
+plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
 
 %%  ESTIMATE HISTORICAL CORRELATION BETWEEN THE TWO INDExES
 
@@ -433,16 +460,7 @@ disp('---------------------------------------------------------------------')
 Market_EU_Black.sigma = sigmaB_EU;
 Market_US_Black.sigma = sigmaB_US;
 
-% Compute the covariance of the Brownian motions and match the historical correlation between the two indexes
-% covBMs = HistCorr * sigmaB_EU * sigmaB_US;
-% %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MINCHIATA
-% %!!!!!!!!!!!!!!!!!!!!!!!!!
-% 
-% % print the results
-% disp('---------------------------------------------------------------------')
-% disp(['The covariance between the BMs is: ', num2str(covBMs)]);
-% disp('---------------------------------------------------------------------')
-
+% compute the prices for the two markets using the Black model to compare with the real prices
 % EU market
 % cycle through the expiries
 for ii = 1:length(Market_EU_filtered.datesExpiry)

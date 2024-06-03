@@ -11,12 +11,14 @@ function Market = sens_Delta(Market, TTM, rates)
 
 % Call the needed variables from the struct
 S0 = Market.spot;
+% Null dividend
+d = 0;
 
-% Cycle over the different expiries and for each of them compute the delta
+% Cycle over the different expiries and for each of them compute the delta sensitivities
 for ii = 1:length(TTM)
-    
+   
     [Market.sensDelta.call(ii).value, Market.sensDelta.put(ii).value] = ...
-        blsdelta(S0, [Market.strikes(ii).value]', rates(ii), TTM(ii), [Market.OTM_ImpVol(ii).value], 0);
+        blsdelta(S0, [Market.strikes(ii).value]', rates(ii), TTM(ii), [Market.OTM_ImpVol(ii).value], d);
 
 end
 

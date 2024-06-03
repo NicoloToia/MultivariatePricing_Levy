@@ -9,7 +9,6 @@ function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, alpha, M, dz)
 % kappa: volatility of the volatility
 % theta: skewness of the volatility
 % alpha: Model parameter (NIG --> alpha = 0.5)
-%                        (VG  --> alpha ~ 0)
 % M: N = 2^M is the number of points in the grid
 % dz: grid spacing
 %
@@ -21,8 +20,7 @@ function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, alpha, M, dz)
 rmse_vett = zeros(length(TTM), 1);
 
 % Compute weights to overweight short maturities errors on prices
-% weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
-
+weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
 
 % Cycle over expiries
 for ii = 1:length(TTM)
@@ -39,8 +37,6 @@ for ii = 1:length(TTM)
 
     % Compute the call prices via Lewis formula
     callPrices = callIntegral(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz, 'FFT');
-
-    % callPrices = callIntegral_fft(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz);
 
     % Compute the put prices via put-call parity
     putPrices = callPrices - B0*(F0 - strikes);
@@ -85,8 +81,8 @@ for ii = 1:length(TTM)
 end
 
 % Compute the total RMSE
-% rmse_tot = sum(weights.*rmse_vett);
+rmse_tot = sum(weights.*rmse_vett);
 
-rmse_tot = sum(rmse_vett);
+% rmse_tot = sum(rmse_vett);
 
 end

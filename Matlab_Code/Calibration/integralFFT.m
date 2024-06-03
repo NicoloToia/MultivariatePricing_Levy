@@ -9,12 +9,11 @@ function I = integralFFT(phi, M, dz, queryPoints)
 %
 % OUTPUTS:
 %   I: The integral of the integrand
-%
 
 % compute N
 N = 2^M;
 
-% compute the x values
+% compute the z values
 z_1 = -(N-1)/2 * dz;
 z = z_1:dz:-z_1;
 
@@ -22,7 +21,6 @@ z = z_1:dz:-z_1;
 d_xi = 2 * pi / (N * dz);
 xi_1 = -(N-1)/2 * d_xi;
 xi = xi_1:d_xi:-xi_1;
-
 
 % use the lewis formula to compute the function to integrate
 f = 1 / (2*pi) *  phi(-xi - 1i/2) ./ (xi.^2 + 1/4);

@@ -17,20 +17,24 @@ function price = black_pricing(Market_US, Market_EU, setDate, targetDate, MeanBM
 % price: price of the derivative
 
 % Recall variables from the market data
+
 % Import the spot prices
 S0_US = Market_US.spot;
 S0_EU = Market_EU.spot;
+
 % Import the expiries
 Expiries_US = datenum([Market_US.datesExpiry]');
 Expiries_EU = datenum([Market_EU.datesExpiry]');
+
 % Import the market discounts B_bar
 B_bar_US = [Market_US.B_bar.value]';
 B_bar_EU = [Market_EU.B_bar.value]';
+
 % Import the calibrated volatilities
 sigma_US = Market_US.sigma;
 sigma_EU = Market_EU.sigma;
 
-% Compute the discount
+% Compute the discount via interpolation
 discount_US = intExtDF(B_bar_US, Expiries_US, targetDate);
 discount_EU = intExtDF(B_bar_EU, Expiries_EU, targetDate);
 
@@ -38,16 +42,10 @@ discount_EU = intExtDF(B_bar_EU, Expiries_EU, targetDate);
 F0_US = S0_US/discount_US;
 F0_EU = S0_EU/discount_EU;
 
-% F0_EU = interp1(datenum(Market_EU.datesExpiry'), [Market_EU.F0.value]', targetDate);
-% F0_US = interp1(datenum(Market_US.datesExpiry'), [Market_US.F0.value]', targetDate);
-
-% F0_EU = 4345;
-% F0_US = 4615;
-
 % Define the Covariance matrix
 cov_matrix = [1 rho; rho 1];
 
-% Generate the random numbers
+% Generate correlated random variables from the multivariate normal distribution
 Z = mvnrnd(MeanBMs, cov_matrix, N_sim);
 
 % Compute the time to maturity

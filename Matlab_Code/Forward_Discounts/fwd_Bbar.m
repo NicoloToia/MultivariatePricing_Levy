@@ -33,9 +33,9 @@ for ii = 1:length(Market.datesExpiry)
     Market.B_bar(ii).value = - Num/Den;
 
     % We compute forward price F, F_bid and F_ask
-    Market.F(ii).value = G./ Market.B_bar(ii).value + Market.strikes(ii).value;
-    Market.FBid(ii).value = GBid./ Market.B_bar(ii).value + Market.strikes(ii).value;
-    Market.FAsk(ii).value = GAsk./ Market.B_bar(ii).value + Market.strikes(ii).value;
+    Market.F(ii).value = G./Market.B_bar(ii).value + Market.strikes(ii).value;
+    Market.FBid(ii).value = GBid./Market.B_bar(ii).value + Market.strikes(ii).value;
+    Market.FAsk(ii).value = GAsk./Market.B_bar(ii).value + Market.strikes(ii).value;
     
     % Compute the average of forward prices for each maturity: F0
     Market.F0(ii).value = mean(Market.F(ii).value);

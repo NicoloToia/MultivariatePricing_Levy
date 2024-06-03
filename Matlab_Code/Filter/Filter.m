@@ -15,9 +15,9 @@ for ii = 1:length(Market.datesExpiry)
     % Filter deltas for the options with delta between 0.1 and 0.9 for calls and -0.9 and -0.1 for puts
     Market.sensDelta.call(ii).value = Market.sensDelta.call(ii).value.*(Market.sensDelta.call(ii).value>=0.1) ...
                                         .*(Market.sensDelta.call(ii).value<=0.9);
+
     Market.sensDelta.put(ii).value = Market.sensDelta.put(ii).value.*(Market.sensDelta.put(ii).value>=-0.9) ...
                                         .*(Market.sensDelta.put(ii).value<=-0.1);
-
 
     % Construct the new filtered market data
     % Expiries
@@ -29,8 +29,8 @@ for ii = 1:length(Market.datesExpiry)
     Filtered_Market.putBid(ii).prices = Market.putBid(ii).prices(Market.sensDelta.put(ii).value ~=0);
     Filtered_Market.putAsk(ii).prices = Market.putAsk(ii).prices(Market.sensDelta.put(ii).value ~=0);
     % Strikes
-    Filtered_Market.strikes(ii).value = Market.strikes(ii).value((Market.sensDelta.call(ii).value ~=0 + ...
-                                         Market.sensDelta.put(ii).value ~=0) > 0 );
+    Filtered_Market.strikes(ii).value = Market.strikes(ii).value((Market.sensDelta.call(ii).value ~=0 & ...
+                                         Market.sensDelta.put(ii).value ~=0));
     % Spot
     Filtered_Market.spot = Market.spot;
     % Volumes

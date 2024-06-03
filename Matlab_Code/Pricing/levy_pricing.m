@@ -19,39 +19,36 @@ function price = levy_pricing(Market_US, Market_EU, settlement, targetDate, ...
 % OUTPUT
 %  price: price of the derivative
 
+% Recall variables from the market data
+% Import the spot prices
 S0_US = Market_US.spot;
 S0_EU = Market_EU.spot;
-% Simulation of the NIG processes
-% Use a Montecarlo simulation to compute the call prices
+
+% Import the expiries
 Expiries_US = datenum([Market_US.datesExpiry]');
 Expiries_EU = datenum([Market_EU.datesExpiry]');
 
+% Import the market discounts B_bar
 B_bar_US = [Market_US.B_bar.value]';
 B_bar_EU = [Market_EU.B_bar.value]';
 
-% Compute the discount
+% Compute the discount via interpolation
 discount_US = intExtDF(B_bar_US, Expiries_US, targetDate);
 discount_EU = intExtDF(B_bar_EU, Expiries_EU, targetDate);
 
 % Compute the forward prices
 F0_US = S0_US/discount_US;
-F0_EU = S0_EU/discount_EU; % dscount sbagliato
-
-% find F0 of the two markets by interpolation
-% F0_EU = interp1(datenum(Market_EU.datesExpiry'), [Market_EU.F0.value]', targetDate);
-% F0_US = interp1(datenum(Market_US.datesExpiry'), [Market_US.F0.value]', targetDate);
-
-% più o meno giusti ma come li otteniamo?????????
-% F0_EU = 4345;
-% F0_US = 4615;
+F0_EU = S0_EU/discount_EU;
 
 % Compute the time to maturity
 ACT_365 = 3;
 ttm = yearfrac(settlement, targetDate, ACT_365);
 
+% Simulation of the NIG processes
+% Use a Montecarlo simulation to compute the call prices
 % draw the standard normal random variables
 g = mvnrnd([0; 0], [1 0.801; 0.801 1], N_sim);
-% g = randn(N_sim, 2);
+
 % draw the inverse gaussian random variables
 G_EU = random('inversegaussian', 1, ttm/kappa_EU, N_sim, 1);
 G_US = random('inversegaussian', 1, ttm/kappa_US, N_sim, 1);

@@ -11,7 +11,6 @@ function Market = compute_ImpVol(Market, TTM, rates)
 %
 % Market: structure with the market data and the implied volatilities
 
-
 % Cycle over the different maturities
 for ii = 1:length(Market.datesExpiry)
 
