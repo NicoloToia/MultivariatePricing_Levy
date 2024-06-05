@@ -23,7 +23,7 @@ rmse_vett = zeros(length(TTM), 1);
 weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
 
 % Cycle over expiries
-for ii = 1:length(TTM)
+for ii = 1:min(length(TTM),19)
 
     % Import data from the Market struct
     F0 = Market.F0(ii).value;
@@ -69,20 +69,27 @@ for ii = 1:length(TTM)
     % check if the model price is inside the bid-ask spread
     % if so remove the point from the RMSE computation
     % do it if the vector has no nan values
-    if ~any(isnan(OTM_call_model)) && ~any(isnan(OTM_put_model))
 
-        OTM_call_model_f = OTM_call_model(OTM_call_model > OTM_call_market_ask' | OTM_call_model < OTM_call_market_bid');
-        OTM_put_model_f = OTM_put_model(OTM_put_model > OTM_put_market_ask' | OTM_put_model < OTM_put_market_bid');
-        OTM_call_market_f = OTM_call_market(OTM_call_model > OTM_call_market_ask' | OTM_call_model < OTM_call_market_bid');
-        OTM_put_market_f = OTM_put_market(OTM_put_model > OTM_put_market_ask' | OTM_put_model < OTM_put_market_bid');
+    % if ~any(isnan(OTM_call_model)) && ~any(isnan(OTM_put_model))
 
-    else
-        continue
-    end
+    %     OTM_call_model_f = OTM_call_model(OTM_call_model > OTM_call_market_ask' | OTM_call_model < OTM_call_market_bid');
+    %     OTM_put_model_f = OTM_put_model(OTM_put_model > OTM_put_market_ask' | OTM_put_model < OTM_put_market_bid');
+    %     OTM_call_market_f = OTM_call_market(OTM_call_model > OTM_call_market_ask' | OTM_call_model < OTM_call_market_bid');
+    %     OTM_put_market_f = OTM_put_market(OTM_put_model > OTM_put_market_ask' | OTM_put_model < OTM_put_market_bid');
+
+    % else
+    %     continue
+    % end
+
+    % same cycle as before but if the model price is inside the bid-ask spread
+    % set the value to be equal to the mid market price
 
     % Compute the RMSE
-   rmse_vett(ii) = rmse( [OTM_put_model_f; OTM_call_model_f], ...
-    [OTM_put_market_f; OTM_call_market_f]);
+%    rmse_vett(ii) = rmse( [OTM_put_model_f; OTM_call_model_f], ...
+%     [OTM_put_market_f; OTM_call_market_f]);
+
+    rmse_vett(ii) = rmse( [OTM_put_model; OTM_call_model], ...
+        [OTM_put_market; OTM_call_market]);
         
 end
 
