@@ -334,6 +334,7 @@ beq = [];
 % lb = [0 0 max(kappa_US, kappa_EU)]; 
 ub = [10 10 10];
 lb = zeros(1,3);
+lb = [0 0 6.7];
 
 constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU);
 % options
@@ -377,8 +378,41 @@ disp('---------------------------------------------------------------------')
 
 %% COMPUTE IDIOSYNCRATIC & SYSTEMIC PARAMETERS
 
-[a_US , a_EU , Beta_Z , gamma_Z] = compute_id_sy_parameters(sigma_US,kappa_US, theta_US,sigma_EU, kappa_EU, theta_EU, nu_Z);
+% Compute the idiosyncratic and systemic parameters for the two markets
+ID_SY_caliParm = compute_id_sy_parameters(sigma_US,kappa_US, theta_US,sigma_EU, kappa_EU, theta_EU, nu_Z, nu_US, nu_EU);
 
+% extract the parameters
+a_US = ID_SY_caliParm.US.a;
+Beta_US = ID_SY_caliParm.US.Beta;
+gamma_US = ID_SY_caliParm.US.gamma;
+nu_US = ID_SY_caliParm.US.nu;
+
+a_EU = ID_SY_caliParm.EU.a;
+Beta_EU = ID_SY_caliParm.EU.Beta;
+gamma_EU = ID_SY_caliParm.EU.gamma;
+nu_EU = ID_SY_caliParm.EU.nu;
+
+Beta_Z = ID_SY_caliParm.Z.Beta;
+gamma_Z = ID_SY_caliParm.Z.gamma;
+nu_Z = ID_SY_caliParm.Z.nu;
+
+% print the results
+disp('---------------------------------------------------------------------')
+disp('The calibrated parameters are:');
+disp(['a_US = ', num2str(a_US)]);
+disp(['Beta_US = ', num2str(Beta_US)]);
+disp(['gamma_US = ', num2str(gamma_US)]);
+disp(['nu_US = ', num2str(nu_US)]);
+disp(['--------------------------------------------']);
+disp(['a_EU = ', num2str(a_EU)]);
+disp(['Beta_EU = ', num2str(Beta_EU)]);
+disp(['gamma_EU = ', num2str(gamma_EU)]);
+disp(['nu_EU = ', num2str(nu_EU)]);
+disp(['--------------------------------------------']);
+disp(['Beta_Z = ', num2str(Beta_Z)]);
+disp(['gamma_Z = ', num2str(gamma_Z)]);
+disp(['nu_Z = ', num2str(nu_Z)]);
+disp('---------------------------------------------------------------------')
 
 %% COMPUTE PRICES VIA CALIBRATED PARAMETERS
 
