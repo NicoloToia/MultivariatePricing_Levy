@@ -39,7 +39,6 @@ clear Markets;
 % Load the market returns
 load('SPXSX5Ereturns.mat');
 
-
 %% COMPUTE DISCOUNT FACTORS AND FORWARD PRICES FROM OPTION DATA
 
 % Compute the market discount factors and forward prices
@@ -47,10 +46,17 @@ Market_EU = fwd_Bbar(Market_EU);
 Market_US = fwd_Bbar(Market_US);
 
 % Plot the forward prices (mid, Bid, Ask) for the EU market
-%plot_fwd_prices(Market_EU);
+% plot_fwd_prices(Market_EU, 'EURO STOXX 50');
 % Plot the forward prices (mid, Bid, Ask) for the US market
-%plot_fwd_prices(Market_US);
+% plot_fwd_prices(Market_US, 'S&P 500');
 
+%% OVERVIEW OF THE DATASET
+
+% Compute the overview of the European market data
+overview_EU = dataset_overview(Market_EU, 'EURO STOXX 50 Index Options');
+
+% Compute the overview of the US market data
+overview_US = dataset_overview(Market_US, 'S&P 500 Index Options');
 
 %% CREATE AUXILIARY VARIABLES AND COMPUTE MARKET ZERO RATES
 
@@ -66,6 +72,32 @@ discounts_US = [Market_US.B_bar.value]';
 F0_EU = [Market_EU.F0.value]';
 F0_US = [Market_US.F0.value]';
 
+% Theorreical forward price, Garman-Kohlhagen formula
+F0_EU_KG = spot_EU./discounts_EU;
+F0_US_KG = spot_US./discounts_US;
+
+% Plot the forward prices for the EU market
+figure;
+plot(Market_EU.datesExpiry, F0_EU, 'b', 'LineWidth', 1);
+hold on;
+plot(Market_EU.datesExpiry, F0_EU_KG, 'r--', 'LineWidth', 1);
+ylabel('Forward Prices');
+title('Forward Prices for the EURO STOXX 50');
+legend('Forward Prices', 'Spot Prices', 'Location', 'Best');
+grid on;
+hold off;
+
+% Plot the forward prices for the US market
+figure;
+plot(Market_US.datesExpiry, F0_US, 'b', 'LineWidth', 1);
+hold on;
+plot(Market_US.datesExpiry, F0_US_KG, 'r--', 'LineWidth', 1);  
+ylabel('Forward Prices');
+title('Forward Prices for the S&P 500');
+legend('Forward Prices', 'Spot Prices', 'Location', 'Best');
+grid on;
+hold off;
+
 % Year convenction ACT/365
 ACT_365 = 3;
 
@@ -77,6 +109,36 @@ TTM_US = yearfrac(settlement, Market_US.datesExpiry, ACT_365);
 rates_EU = -log(discounts_EU)./TTM_EU;
 rates_US = -log(discounts_US)./TTM_US;
 
+% Plot the zero rates for the EU market
+figure;
+yyaxis left;
+plot(Market_EU.datesExpiry, rates_EU, 'b', 'LineWidth', 1);
+hold on;
+ylabel('Zero Rates');
+yyaxis right;
+plot(Market_EU.datesExpiry, discounts_EU, 'r', 'LineWidth', 1);
+ylabel('Discount Factors');
+title('Zero Rates and Discount Factors for the EURO STOXX 50');
+legend('Zero Rates', 'Discount Factors', 'Location', 'Best');
+% font size of the legend
+set(findobj(gcf, 'type', 'legend'), 'fontsize', 12);
+grid on;
+hold off;
+
+% Plot the zero rates for the US market
+figure;
+yyaxis left;
+plot(Market_US.datesExpiry, rates_US, 'b', 'LineWidth', 1.5);
+hold on;
+ylabel('Zero Rates');
+yyaxis right;
+plot(Market_US.datesExpiry, discounts_US, 'r', 'LineWidth', 1.5);
+ylabel('Discount Factors');
+title('Zero Rates and Discount Factors for the S&P 500');
+legend('Zero Rates', 'Discount Factors', 'Location', 'Best');
+set(findobj(gcf, 'type', 'legend'), 'fontsize', 12);
+grid on;
+hold off;
 
 %% COMPUTE IMPLIED VOLATILITIES & SELECT OUT OF THE MONEY (OTM) OPTIONS
 
@@ -96,10 +158,10 @@ Market_EU = select_OTM(Market_EU);
 Market_US = select_OTM(Market_US);
 
 %Plot the implied volatility smiles for the EU market
-plot_ImpVol(Market_EU, 'EU OTM Implied Volatility Smile');
+% plot_ImpVol(Market_EU, 'EU OTM Implied Volatility Smile');
 
 % Plot the implied volatility smiles for the US market
-plot_ImpVol(Market_US, 'US OTM Implied Volatility Smile');
+% plot_ImpVol(Market_US, 'US OTM Implied Volatility Smile');
 
 %% FILTERING
 
@@ -109,40 +171,14 @@ Market_EU = sens_Delta(Market_EU, TTM_EU, rates_EU);
 Market_US = sens_Delta(Market_US, TTM_US, rates_US);
 
 % Create a new struct for the EU market with the filtered options
-Market_EU_filtereds = Filter(Market_EU);
+Market_EU_filtered = Filter(Market_EU);
 % Create a new struct for the US market with the filtered options
-Market_US_filtereds = Filter(Market_US);
-
+Market_US_filtered = Filter(Market_US);
 
 % Plot the filtered implied volatility smiles for the EU market
-plot_ImpVol(Market_EU_filtereds, 'EU OTM Implied Volatility Smile (Filtered)');
+plot_ImpVol(Market_EU_filtered, 'EU OTM Implied Volatility Smile (Filtered)');
 % Plot the filtered implied volatility smiles for the US market
-plot_ImpVol(Market_US_filtereds, 'US OTM Implied Volatility Smile (Filtered)');
-
-% Compute the market discount factors and forward prices
-Market_EU_filtered = fwd_Bbar(Market_EU_filtereds);
-Market_US_filtered = fwd_Bbar(Market_US_filtereds);
-
-F0_EU = [Market_EU_filtered.F0.value]';
-F0_US = [Market_US_filtered.F0.value]';
-
-% Import the market discounts factors from the market data
-discounts_EU = [Market_EU_filtered.B_bar.value]';
-discounts_US = [Market_US_filtered.B_bar.value]';
-
-% Compute the market zero rates
-rates_EU = -log(discounts_EU)./TTM_EU;
-rates_US = -log(discounts_US)./TTM_US;
-
-% % change the F0 eu for the 10 11 aturity via interpolation and extrap for 13
-% F0_EU(10) = interp1([TTM_EU(9), TTM_EU(12)], [F0_EU(9), F0_EU(12)], TTM_EU(10));
-% F0_EU(11) = interp1([TTM_EU(9), TTM_EU(12)], [F0_EU(9), F0_EU(12)], TTM_EU(11));
-% F0_EU(13) = interp1([TTM_EU(1:12)], [F0_EU(1:12)], TTM_EU(13),'linear', 'extrap');
-% 
-% % modify the struct
-% for ii = 1:length(Market_EU_filtered.datesExpiry)
-%     Market_EU_filtered.F0(ii).value = F0_EU(ii);
-% end
+plot_ImpVol(Market_US_filtered, 'US OTM Implied Volatility Smile (Filtered)');
 
 close all;
 %% CALIBRATION
@@ -189,33 +225,33 @@ b = [
 
 % p0 = [0.5 2 0.5 0.5 2 0.5];
 
-% p0 = [0.05 0.05 0.05 0.05 0.05 0.05];
-
 % p0 = [0.1 0.1 -0.1 0.1 0.1 -0.1];
 
-% p0 = [0.001 0.001 -0.001 0.001 0.001 -0.001];
-
-% p0 = [0.13 2 -0.1 0.13 2 -0.1];
-
-p0 = [0.15 0.3 -0.5 0.15 0.3 -0.5];
+% p0 = [0.15 0.3 -0.5 0.15 0.3 -0.5];
 
 % p0 = [0.13 0.1 -0.1 0.16 0.1 -0.1];
+
+p0 = 0.3*ones(1,6);
 
 
 % Non linear constraints
 const = @(x) constraint(x, alpha);
 % lower bound
 lb = [0 0 -inf 0 0 -inf];
-
-ub = [inf 1 inf inf 1 inf];
+% ub = [inf 1 inf inf 1 inf];
 % lb = [];
-% ub = [];
+ub = [];
 % options
-options = optimset('Display', 'iter');
+% options = optimset('Display', 'iter');
+options = optimoptions('fmincon',...
+    'OptimalityTolerance', 1e-7, ...
+    'TolFun', 1e-5, ...
+    'ConstraintTolerance', 1e-5,...
+    'Display', 'iter');
 % options = optimoptions('fmincon', 'Display', 'off');
 
 % Optimization
-calibrated_param = fmincon(obj_fun, p0, A, b, [], [], lb, ub, const, options);
+calibrated_param = fmincon(obj_fun, p0, [], [], [], [], lb, ub, const, options);
 
 % Loro phi
 % calibrated_param = [0.124591312025052 0.825923977978176 -0.162083449192270 0.155780648904408 3.82951110965306128 -0.094115856301092];
@@ -228,7 +264,7 @@ calibrated_param = fmincon(obj_fun, p0, A, b, [], [], lb, ub, const, options);
 
 % End elapse time 
 toc
-
+%%
 % print the results
 disp('---------------------------------------------------------------------')
 disp('The optimal parameters are:');
@@ -286,6 +322,8 @@ corrHist = corr(Returns.Annually(:,2), Returns.Annually(:,1));
 % define the objective function
 obFun = @(nu) ( sqrt( nu(1)*nu(2) / ((nu(1) + nu(3)) * (nu(2) + nu(3)))) - corrHist )^2;
 
+% cambia la fincione obbiettivo e clibra nu z e basta!!!!!
+
 % define the constraints
 A = [-1 0 0; 
       0 -1 0; 
@@ -293,16 +331,22 @@ A = [-1 0 0;
 b = [0; 0; 0];
 Aeq = []; 
 beq = [];
-lb = [0 0 max(kappa_EU,kappa_US)]; 
-ub = [];
+% lb = [0 0 max(kappa_US, kappa_EU)]; 
+ub = [10 10 10];
+lb = zeros(1,3);
 
 constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU);
 % options
 % options = optimoptions('fmincon', 'Display', 'off');
-options = optimset('MaxFunEvals', 3e3, 'Display', 'iter');
+% options = optimset('MaxFunEvals', 3e3, 'ConstraintTolerance', 10^-4, 'Display', 'iter');
+options = optimoptions('fmincon',...
+    'OptimalityTolerance', 1e-6, ...
+    'TolFun', 1e-4, ...
+    'ConstraintTolerance', 1e-3,...
+    'Display', 'iter');
 
 % calibration of the parameters
-nu_calibrated = fmincon(obFun, ones(1,3), A, b, Aeq, beq, lb, ub, constNU, options);
+nu_calibrated = fmincon(obFun, 0.5*ones(1,3), A, b, Aeq, beq, lb, ub, constNU, options);
 
 nu_US = nu_calibrated(1);
 nu_EU = nu_calibrated(2);
@@ -317,8 +361,8 @@ disp('---------------------------------------------------------------------')
 
 %%
 % Compute the calibrated parameter nu_z using an alternative method
-nu_Z = sqrt(kappa_EU*kappa_US)/corrHist;
-% nu_Z = 6.985087
+% nu_Z = sqrt(kappa_EU*kappa_US)/corrHist;
+% nu_Z = 6.985087;
 
 % nu2 = fzero(funNU2, 0.1);
 nu_EU = (kappa_EU*nu_Z)/(nu_Z - kappa_EU);
@@ -396,7 +440,7 @@ disp(['The average percentage error for the US market (Implied Volatility) is: '
 % plot_model_ImpVol(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Implied Volatilities vs EU Market Implied Volatilities');
 
 % Plot the model implied volatilities versus the market implied volatilities for the US market
-plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
+% plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
 
 %%  ESTIMATE HISTORICAL CORRELATION BETWEEN THE TWO INDExES
 
@@ -520,7 +564,15 @@ price_black = black_pricing(Market_US_Black, Market_EU_Black, settlement, target
 %%
 % Compute the price of the derivative using the Lévy model
 price_levy = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
-                                    alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, N_sim);
+                                    alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, HistCorr, N_sim);
+%%
+rho = sqrt(kappa_EU*kappa_US)/nu_Z;
+% rho = sqrt(nu_US*nu_EU)/((nu_EU+nu_Z)*(nu_US*nu_Z));
+% Compute the price of the derivative using the Lévy model
+price_levy = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
+                                    alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim);
+
+
 
 %%
 % price via the semi closed formula
@@ -534,3 +586,4 @@ price_closed_formula = closedFormula(Market_US_Black, Market_EU_Black, settlemen
 
 price = levy_pricing_alternative(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
             theta_US, theta_EU, nu_US, nu_EU, nu_Z, N_sim);
+

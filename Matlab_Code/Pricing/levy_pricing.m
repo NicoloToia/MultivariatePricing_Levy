@@ -1,5 +1,5 @@
 function price = levy_pricing(Market_US, Market_EU, settlement, targetDate, ...
-                                alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, N_sim)
+                                alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim)
 % This function computes the price of a derivative using a Monte Carlo simulation under Lévy processes
 % 
 % INPUTS
@@ -47,7 +47,7 @@ ttm = yearfrac(settlement, targetDate, ACT_365);
 % Simulation of the NIG processes
 % Use a Montecarlo simulation to compute the call prices
 % draw the standard normal random variables
-g = mvnrnd([0; 0], [1 0.801; 0.801 1], N_sim);
+g = mvnrnd([0; 0], [1 rho; rho 1], N_sim);
 
 % draw the inverse gaussian random variables
 G_EU = random('inversegaussian', 1, ttm/kappa_EU, N_sim, 1);

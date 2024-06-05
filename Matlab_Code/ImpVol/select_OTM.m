@@ -27,6 +27,14 @@ for ii = 1:length(Market.datesExpiry)
     Market.OTM_ImpVol_put(ii).value = Market.ImpVol_put(ii).value(1:idx);
     Market.OTM_ImpVol_call(ii).value = Market.ImpVol_call(ii).value(idx+1:end);
     Market.OTM_ImpVol(ii).value = [Market.OTM_ImpVol_put(ii).value; Market.OTM_ImpVol_call(ii).value];
+    % ask and bid
+    % Market.OTM_ImpVol_put(ii).ask = Market.ImpVol_put(ii).ask(1:idx);
+    % Market.OTM_ImpVol_call(ii).ask = Market.ImpVol_call(ii).ask(idx+1:end);
+    % Market.OTM_ImpVol(ii).ask = [Market.OTM_ImpVol_put(ii).ask; Market.OTM_ImpVol_call(ii).ask];
+    
+    % Market.OTM_ImpVol_put(ii).bid = Market.ImpVol_put(ii).bid(1:idx);
+    % Market.OTM_ImpVol_call(ii).bid = Market.ImpVol_call(ii).bid(idx+1:end);
+    % Market.OTM_ImpVol(ii).bid = [Market.OTM_ImpVol_put(ii).bid; Market.OTM_ImpVol_call(ii).bid];
     
     % Check for NaN values in the implied volatilities
     if isnan(Market.OTM_ImpVol(ii).value)      
