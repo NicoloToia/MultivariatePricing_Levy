@@ -38,7 +38,7 @@ title('3D Scatter Plot of Implied Volatilities');
 grid on;
 
 %% Surface
-
+figure;
 % find the boundaries for the y and the smallest step 
 y_min = min(Filtered_Market.strikes(1).value);
 y_max = max(Filtered_Market.strikes(1).value);
