@@ -251,10 +251,10 @@ options = optimoptions('fmincon',...
 % options = optimoptions('fmincon', 'Display', 'off');
 
 % Optimization
-calibrated_param = fmincon(obj_fun, p0, [], [], [], [], lb, ub, const, options);
+%calibrated_param = fmincon(obj_fun, p0, [], [], [], [], lb, ub, const, options);
 
 % Loro phi
-% calibrated_param = [0.124591312025052 0.825923977978176 -0.162083449192270 0.155780648904408 3.82951110965306128 -0.094115856301092];
+calibrated_param = [0.124591312025052 0.825923977978176 -0.162083449192270 0.155780648904408 3.82951110965306128 -0.094115856301092];
 
 % nostri param
 % calibrated_param = [0.12535 0.52274 -0.1761 0.14199 2.0056 -0.10184];
@@ -374,6 +374,11 @@ disp(['nu_EU = ', num2str(nu_EU)]);
 disp(['nu_US = ', num2str(nu_US)]);
 disp(['nu_Z = ', num2str(nu_Z)]);
 disp('---------------------------------------------------------------------')
+
+%% COMPUTE IDIOSYNCRATIC & SYSTEMIC PARAMETERS
+
+[a_US , a_EU , Beta_Z , gamma_Z] = compute_id_sy_parameters(sigma_US,kappa_US, theta_US,sigma_EU, kappa_EU, theta_EU, nu_Z);
+
 
 %% COMPUTE PRICES VIA CALIBRATED PARAMETERS
 
@@ -585,5 +590,4 @@ price_closed_formula = closedFormula(Market_US_Black, Market_EU_Black, settlemen
 % alternative
 
 price = levy_pricing_alternative(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
-            theta_US, theta_EU, nu_US, nu_EU, nu_Z, N_sim);
-
+            theta_US, theta_EU, nu_US, a_US, a_EU, nu_EU, Beta_Z,gamma_Z,nu_Z, N_sim);

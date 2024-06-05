@@ -1,5 +1,5 @@
 function price = levy_pricing_alternative(Market_US, Market_EU, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
-            theta_US, theta_EU, nu_US, nu_EU, nu_Z, nSim)
+            theta_US, theta_EU, nu_US, a_US, a_EU, nu_EU, Beta_Z,gamma_Z,nu_Z, nSim)
 % This function computes the price of a barrier option using the Levy pricing alternative
 %
 % INPUTS
@@ -41,39 +41,6 @@ ttm = yearfrac(settlement, targetDate, ACT_365);
 rate_US = -log(discount_US)/ttm;
 rate_EU = -log(discount_EU)/ttm;
 
-% Define the optimization variables
-x = optimvar('x',4);
-
-% a_US = x(1);
-% a_EU = x(2);
-% Beta_Z = x(3);
-% gamma_Z = x(4);
-
-eq1 = x(1) * x(3) - (kappa_US * theta_US / nu_Z) == 0;
-eq2 = x(2) * x(3) - (kappa_EU * theta_EU / nu_Z) == 0;
-
-eq3 = kappa_US * sigma_US^2 - nu_Z * x(1)^2 * x(4) ^2  == 0;
-eq4 = kappa_EU * sigma_EU^2 - nu_Z * x(2)^2 * x(4) ^2  == 0;
-
-% Build a structure for the system of equations
-prob = eqnproblem;
-prob.Equations.eq1 = eq1;
-prob.Equations.eq2 = eq2;
-prob.Equations.eq3 = eq3;
-prob.Equations.eq4 = eq4;
-
-% Initial value
-x0.x = ones(4,1);
-
-% Solve the system of equations
-sol = solve(prob,x0);
-
-% Extract the calibrated parameters
-a_US = sol.x(1);
-a_EU = sol.x(2);
-Beta_Z = sol.x(3);
-gamma_Z = sol.x(4);
-
 %%
 
 spot_US = Market_US.spot;
@@ -98,10 +65,10 @@ drift_compensator_YEU = -1/nu_EU * (1 - sqrt( 1 - 2 * nu_EU * Beta_EU - nu_EU * 
 drift_compensator_YUS = -1/nu_US * (1 - sqrt( 1 - 2 * nu_US * Beta_US - nu_US * gamma_US^2));
 drift_compensator_Z   = -1/nu_Z  * (1 - sqrt( 1 - 2 * nu_Z * Beta_Z - nu_Z * gamma_Z^2));
 
-Y_US =  - gamma_US^2 * ( + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
-Y_EU =  - gamma_EU^2 * ( + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
+Y_US = - gamma_US^2 * (+ Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
+Y_EU = - gamma_EU^2 * ( + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
 
-Z =  - gamma_Z ^2 * ( + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
+Z = - gamma_Z^2 * ( + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
 
 % Marginal processes
 X_US = Y_US + a_US * Z;
