@@ -22,8 +22,24 @@ rmse_vett = zeros(length(TTM), 1);
 % Compute weights to overweight short maturities errors on prices
 weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
 
+% settlement = datenum("07/09/2023");
+% targetDate = datetime(settlement, 'ConvertFrom', 'datenum') + calyears(1);
+% targetDate(~isbusday(targetDate, eurCalendar())) = busdate(targetDate(~isbusday(targetDate, eurCalendar())), 'modifiedfollow', eurCalendar());
+% targetDate = datenum(targetDate);
+
+
+% % Calculate the difference in days from the target date
+% daysDiff = abs(datenum(Market.datesExpiry) - (targetDate));
+
+% % Convert the differences to weights using an exponential decay function
+% decayRate = 0.01; % Adjust decay rate as needed
+% weights = exp(-decayRate * daysDiff);
+
+% % Normalize the weights
+% weights = (weights' / sum(weights));
+
 % Cycle over expiries
-for ii = 1:length(TTM)
+for ii = 1:min(length(TTM),19)
 
     % Import data from the Market struct
     F0 = Market.F0(ii).value;
@@ -81,8 +97,8 @@ for ii = 1:length(TTM)
 end
 
 % Compute the total RMSE
-rmse_tot = sum(weights.*rmse_vett);
+% rmse_tot = sum(weights.*rmse_vett);
 
-% rmse_tot = sum(rmse_vett);
+rmse_tot = sum(rmse_vett);
 
 end
