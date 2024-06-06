@@ -17,15 +17,15 @@ function callPrices = callIntegral(B0, F0, alpha, sigma, kappa, eta, t, log_mone
 %   callPrices: price of the call option (same size as log_moneyness)
 
 % Compute the compensator
-compensator_NIG = 1/kappa * (1-sqrt(1-2.*kappa.*eta - kappa.*sigma .^2));
-compensator_VG = log(1 - eta * kappa - (sigma^2 * kappa^2)/2);
+compensator_NIG =  - t./kappa * (1-sqrt(1-2.*kappa.*eta - kappa.*sigma .^2));
+compensator_VG  = t./kappa * log(1 - eta * kappa - (sigma^2 * kappa)/2);
 
 if strcmp(flag, 'NIG')
     phi = @(xi) exp(t.*(1/kappa * (1 - sqrt(1 - 2i .* xi .* kappa .* eta + xi.^2 .* kappa .* sigma.^2))))...
-                .*exp(- xi .* 1i .* t.*compensator_NIG);
+                .*exp(xi .* 1i .* compensator_NIG);
 elseif strcmp(flag, 'VG')
     phi = @(xi) (1 - 1i .* xi .* eta .* kappa + (xi.^2 * sigma^2 * kappa / 2)).^(-t / kappa)...
-                 ./ exp(- 1i .* xi .* t .* compensator_VG);
+                 .* exp(1i .* xi .*  compensator_VG);
 else
     error('Flag not recognized');
 end                

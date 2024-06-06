@@ -191,7 +191,7 @@ close all;
 %% 3D plot
 
 % Plot the 3D implied volatility surface for the EU market
-% plot3d_impl_vol_new(Market_EU_filtered)
+plot3d_impl_vol_new(Market_EU_filtered)
 
 % Plot the 3D implied volatility surface for the US market
 % plot3d_impl_vol_new(Market_US_filtered)
@@ -644,13 +644,15 @@ N_sim = 1e7;
 %%
 % Compute the price of the derivative using the Lévy model
 [price_levy, CI_levy] = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
-                                    alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, HistCorr, N_sim);
+                                    alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, HistCorr, N_sim, flag);
 %%
 % rho = sqrt(kappa_EU*kappa_US)/nu_Z;
 rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
+% rho = corrHist;
+
 % Compute the price of the derivative using the Lévy model
 [price_levy, CI_levy] = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
-                                    alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim);
+                                    alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim, flag);
 
 
 %%
@@ -663,8 +665,8 @@ price_closed_formula = closedFormula(Market_US_Black, Market_EU_Black, settlemen
 %%
 % alternative
 
-[price_alt, CI_levy_alt] = levy_pricing_alternative(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
-            theta_US, theta_EU, nu_US, a_US, a_EU, nu_EU, Beta_Z,gamma_Z,nu_Z, N_sim);
+[price_alt, CI_levy_alt] = levy_pricing_alternative(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate,...
+                                     calibrated_param, ID_SY_caliParm, N_sim, flag);
 
 
 %%

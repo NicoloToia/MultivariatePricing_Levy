@@ -1,5 +1,5 @@
-function [price, priceCI] = levy_pricing_alternative(Market_US, Market_EU, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
-            theta_US, theta_EU, nu_US, a_US, a_EU, nu_EU, Beta_Z,gamma_Z,nu_Z, nSim)
+function [price, priceCI] = levy_pricing_alternative(Market_US, Market_EU, settlement, targetDate,...
+                             calibrated_param, ID_SY_caliParm, nSim, flag)
 % This function computes the price of a barrier option using the Levy pricing alternative
 %
 % INPUTS
@@ -23,6 +23,30 @@ function [price, priceCI] = levy_pricing_alternative(Market_US, Market_EU, settl
 % 
 % param --> [a_US, a_EU, Beta_Z, gamma_Z]
 
+% Idiosyncratic factors for the US and EU markets
+a_US = ID_SY_caliParm.US.a;
+a_EU = ID_SY_caliParm.EU.a;
+Beta_US = ID_SY_caliParm.US.Beta;
+Beta_EU = ID_SY_caliParm.EU.Beta;
+gamma_US = ID_SY_caliParm.US.gamma;
+gamma_EU = ID_SY_caliParm.EU.gamma;
+nu_US = ID_SY_caliParm.US.nu;
+nu_EU = ID_SY_caliParm.EU.nu;
+% Sytematic factor
+Beta_Z = ID_SY_caliParm.Z.Beta;
+gamma_Z = ID_SY_caliParm.Z.gamma;
+nu_Z = ID_SY_caliParm.Z.nu;
+
+% Rename the calibrated parameters for the EU market
+sigma_EU = calibrated_param(1);
+kappa_EU = calibrated_param(2);
+theta_EU = calibrated_param(3);
+
+% Rename the calibrated parameters for the US market
+sigma_US = calibrated_param(4);
+kappa_US = calibrated_param(5);
+theta_US = calibrated_param(6);
+
 Expiries_US = datenum([Market_US.datesExpiry]');
 Expiries_EU = datenum([Market_EU.datesExpiry]');
 
@@ -41,26 +65,37 @@ ttm = yearfrac(settlement, targetDate, ACT_365);
 rate_US = -log(discount_US)/ttm;
 rate_EU = -log(discount_EU)/ttm;
 
-%%
-
 spot_US = Market_US.spot;
 spot_EU = Market_EU.spot;
 
-drift_compensator_US = -1/kappa_US * (1 - sqrt( 1 - 2 * kappa_US * theta_US - kappa_US * sigma_US^2));
-drift_compensator_EU = -1/kappa_EU * (1 - sqrt( 1 - 2 * kappa_EU * theta_EU - kappa_EU * sigma_EU^2));
+% Compute the drift compensators in the two model NIG and VG
+if strcmp(flag, 'NIG')
+    % NIG
+    drift_compensator_US = -1/kappa_US * (1 - sqrt( 1 - 2 * kappa_US * theta_US - kappa_US * sigma_US^2));
+    drift_compensator_EU = -1/kappa_EU * (1 - sqrt( 1 - 2 * kappa_EU * theta_EU - kappa_EU * sigma_EU^2));
+
+    G_US = random('inverseGaussian', 1, ttm/nu_US,[nSim, 1]);
+    G_EU =  random('inverseGaussian', 1, ttm/nu_EU,[nSim, 1]);
+    G_Z = random('inverseGaussian', 1, ttm/nu_Z,[nSim, 1]);
+elseif strcmp(flag, 'VG')
+    % VG
+    drift_compensator_US = 1/kappa_US * log(1 - theta_US * kappa_US - (sigma_US^2 * kappa_US)/2);
+    drift_compensator_EU = 1/kappa_EU * log(1 - theta_EU * kappa_EU - (sigma_EU^2 * kappa_EU)/2);
+
+    G_US = random('Gamma', 1, ttm/nu_US,[nSim, 1]);
+    G_EU =  random('Gamma', 1, ttm/nu_EU,[nSim, 1]);
+    G_Z = random('Gamma', 1, ttm/nu_Z,[nSim, 1]);
+else
+    error('Flag not recognized');
+end
 
 g = randn(nSim, 3);
 
-G_US = random('inverseGaussian', 1, ttm/nu_US,[nSim, 1]);
-G_EU =  random('inverseGaussian', 1, ttm/nu_EU,[nSim, 1]);
-G_Z = random('inverseGaussian', 1, ttm/nu_Z,[nSim, 1]);
+% G_US = random('inverseGaussian', 1, ttm/nu_US,[nSim, 1]);
+% G_EU =  random('inverseGaussian', 1, ttm/nu_EU,[nSim, 1]);
+% G_Z = random('inverseGaussian', 1, ttm/nu_Z,[nSim, 1]);
 
-Beta_US = theta_US - a_US * Beta_Z;
-Beta_EU = theta_EU - a_EU * Beta_Z;
-
-gamma_US = sqrt(sigma_US^2 - a_US^2*gamma_Z^2);
-gamma_EU = sqrt(sigma_EU^2 - a_EU^2*gamma_Z^2);
-
+% inverse gaussian
 drift_compensator_YEU = -1/nu_EU * (1 - sqrt( 1 - 2 * nu_EU * Beta_EU - nu_EU * gamma_EU^2));
 drift_compensator_YUS = -1/nu_US * (1 - sqrt( 1 - 2 * nu_US * Beta_US - nu_US * gamma_US^2));
 drift_compensator_Z   = -1/nu_Z  * (1 - sqrt( 1 - 2 * nu_Z * Beta_Z - nu_Z * gamma_Z^2));
