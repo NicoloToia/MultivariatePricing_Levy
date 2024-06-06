@@ -88,11 +88,14 @@ function plot3d_impl_vol_new(Filtered_Market)
         end
     end
     
-    surf(xGrid_new, yGrid_new, zGrid_new_interpolated);
+    s = surf(xGrid_new, yGrid_new, zGrid_new_interpolated);
+    get(s);
+    set(s, 'EdgeAlpha',0.1);
     xlabel('Expiries');
     ylabel('Strikes');
     zlabel('Implied Volatilities');
     title('3D Surf of Implied Volatilities');
     grid on;
+    
 
 end 
