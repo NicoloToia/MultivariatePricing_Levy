@@ -32,10 +32,9 @@ addpath('Pricing')
 settlement = datenum("07/09/2023");
 
 % Load the dataset
-Markets = load('OptionData.mat');
-Market_EU = Markets.mkt_EU;
-Market_US = Markets.mkt;
-clear Markets;
+Market_EU = load('OptionData.mat').mkt_EU;
+Market_US = load('OptionData.mat').mkt;
+
 % Load the market returns
 load('SPXSX5Ereturns.mat');
 
@@ -83,7 +82,7 @@ hold on;
 plot(Market_EU.datesExpiry, F0_EU_KG, 'r--', 'LineWidth', 1);
 ylabel('Forward Prices');
 title('Forward Prices for the EURO STOXX 50');
-legend('Forward Prices', 'Spot Prices', 'Location', 'Best');
+legend('Forward Prices', 'Spot Prices', 'Location', 'northwest');
 grid on;
 hold off;
 
@@ -94,7 +93,7 @@ hold on;
 plot(Market_US.datesExpiry, F0_US_KG, 'r--', 'LineWidth', 1);  
 ylabel('Forward Prices');
 title('Forward Prices for the S&P 500');
-legend('Forward Prices', 'Spot Prices', 'Location', 'Best');
+legend('Forward Prices', 'Spot Prices', 'Location', 'northwest');
 grid on;
 hold off;
 
@@ -128,11 +127,11 @@ hold off;
 % Plot the zero rates for the US market
 figure;
 yyaxis left;
-plot(Market_US.datesExpiry, rates_US, 'b', 'LineWidth', 1.5);
+plot(Market_US.datesExpiry, rates_US, 'b', 'LineWidth', 1);
 hold on;
 ylabel('Zero Rates');
 yyaxis right;
-plot(Market_US.datesExpiry, discounts_US, 'r', 'LineWidth', 1.5);
+plot(Market_US.datesExpiry, discounts_US, 'r', 'LineWidth', 1);
 ylabel('Discount Factors');
 title('Zero Rates and Discount Factors for the S&P 500');
 legend('Zero Rates', 'Discount Factors', 'Location', 'Best');
@@ -175,12 +174,29 @@ Market_EU_filtered = Filter(Market_EU);
 % Create a new struct for the US market with the filtered options
 Market_US_filtered = Filter(Market_US);
 
+% Flatten the implied volatility smiles if needed
+target_maturity_last = datenum(Market_US_filtered.datesExpiry(end));
+Market_US_filtered = flatten_smile(Market_US_filtered, target_maturity_last, 1);
+
+target_maturity_2 = datenum(Market_US_filtered.datesExpiry(end-2));
+Market_US_filtered = flatten_smile(Market_US_filtered, target_maturity_2, 0);
+
 % Plot the filtered implied volatility smiles for the EU market
 plot_ImpVol(Market_EU_filtered, 'EU OTM Implied Volatility Smile (Filtered)');
+
 % Plot the filtered implied volatility smiles for the US market
 plot_ImpVol(Market_US_filtered, 'US OTM Implied Volatility Smile (Filtered)');
 
-close all;
+% close all;
+%% 3D plot
+
+% Plot the 3D implied volatility surface for the EU market
+% plot3d_impl_vol_new(Market_EU_filtered)
+
+% Plot the 3D implied volatility surface for the US market
+plot3d_impl_vol_new(Market_US_filtered)
+
+
 %% CALIBRATION
 
 % Define the weight of both markets (EU and US)
@@ -190,7 +206,6 @@ w_US = spot_US/(spot_EU + spot_US);
 % Set the Fast Fourier Transform (FFT) parameters
 M_fft = 15;
 dz_fft = 0.0025;
-alpha = 0.5;
 
 % Calibrate the NIG parameters for the two markets (EU and US)
 % sigma_EU = p(1)
@@ -203,8 +218,18 @@ alpha = 0.5;
 % Compute Elapse Time
 tic
 
+flag = 'NIG';
+
+if strcmp(flag, 'NIG')
+    alpha = 0.5;
+elseif strcmp(flag, 'VG')
+    alpha = 0;
+else
+    disp('Flag not found')
+end
+
 % Define the objective function
-obj_fun = @(p) objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU_filtered, Market_US_filtered, M_fft, dz_fft, alpha);
+obj_fun = @(p) objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU_filtered, Market_US_filtered, M_fft, dz_fft, alpha, flag);
 
 % Linear constraints
 A = [
@@ -233,7 +258,6 @@ b = [
 
 p0 = 0.3*ones(1,6);
 
-
 % Non linear constraints
 const = @(x) constraint(x, alpha);
 % lower bound
@@ -241,6 +265,7 @@ lb = [0 0 -inf 0 0 -inf];
 % ub = [inf 1 inf inf 1 inf];
 % lb = [];
 ub = [];
+
 % options
 % options = optimset('Display', 'iter');
 options = optimoptions('fmincon',...
@@ -251,16 +276,10 @@ options = optimoptions('fmincon',...
 % options = optimoptions('fmincon', 'Display', 'off');
 
 % Optimization
-%calibrated_param = fmincon(obj_fun, p0, [], [], [], [], lb, ub, const, options);
+calibrated_param = fmincon(obj_fun, p0, A, b, [], [], lb, ub, const, options);
 
 % Loro phi
-calibrated_param = [0.124591312025052 0.825923977978176 -0.162083449192270 0.155780648904408 3.82951110965306128 -0.094115856301092];
-
-% nostri param
-% calibrated_param = [0.12535 0.52274 -0.1761 0.14199 2.0056 -0.10184];
-
-% calib const add
-% calibrated_param = [0.1556 0.19068 0.00067435 0.14106 0.22207 0.00056648];
+% calibrated_param = [0.124591312025052 0.825923977978176 -0.162083449192270 0.155780648904408 3.82951110965306128 -0.094115856301092];
 
 % End elapse time 
 toc
@@ -331,10 +350,10 @@ A = [-1 0 0;
 b = [0; 0; 0];
 Aeq = []; 
 beq = [];
-% lb = [0 0 max(kappa_US, kappa_EU)]; 
-ub = [10 10 10];
-lb = zeros(1,3);
-lb = [0 0 6.7];
+lb = [0 0 max(kappa_US, kappa_EU)]; 
+ub = [];
+% lb = zeros(1,3);
+% lb = [0 0 3];
 
 constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU);
 % options
@@ -376,6 +395,10 @@ disp(['nu_US = ', num2str(nu_US)]);
 disp(['nu_Z = ', num2str(nu_Z)]);
 disp('---------------------------------------------------------------------')
 
+% check
+rho = sqrt(kappa_EU*kappa_US)/nu_Z;
+rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
+
 %% COMPUTE IDIOSYNCRATIC & SYSTEMIC PARAMETERS
 
 % Compute the idiosyncratic and systemic parameters for the two markets
@@ -403,12 +426,12 @@ disp(['a_US = ', num2str(a_US)]);
 disp(['Beta_US = ', num2str(Beta_US)]);
 disp(['gamma_US = ', num2str(gamma_US)]);
 disp(['nu_US = ', num2str(nu_US)]);
-disp(['--------------------------------------------']);
+disp('--------------------------------------------');
 disp(['a_EU = ', num2str(a_EU)]);
 disp(['Beta_EU = ', num2str(Beta_EU)]);
 disp(['gamma_EU = ', num2str(gamma_EU)]);
 disp(['nu_EU = ', num2str(nu_EU)]);
-disp(['--------------------------------------------']);
+disp('--------------------------------------------');
 disp(['Beta_Z = ', num2str(Beta_Z)]);
 disp(['gamma_Z = ', num2str(gamma_Z)]);
 disp(['nu_Z = ', num2str(nu_Z)]);
@@ -417,7 +440,6 @@ disp('---------------------------------------------------------------------')
 %% COMPUTE PRICES VIA CALIBRATED PARAMETERS
 
 % Choose the flag for the pricing method
-flag = 'FFT';
 
 % Compute the prices for EU market
 Market_EU_calibrated = compute_prices(Market_EU_calibrated, TTM_EU, M_fft, dz_fft, alpha, flag);
@@ -480,6 +502,25 @@ disp(['The average percentage error for the US market (Implied Volatility) is: '
 
 % Plot the model implied volatilities versus the market implied volatilities for the US market
 % plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
+
+%% 3D PLOT OF THE IMPLIED VOLATILITIES (MKT vs MOD)
+% % plot the EU implied volatilities
+% figure;
+% % MKT
+% plot3D_impVol(Market_EU_filtered);
+% hold on;
+% % MOD
+% plot3D_impVol(Market_EU_calibrated);
+% legend('MKT','MOD');
+% hold off;
+% figure;
+% % MKT
+% plot3D_impVol(Market_EU_filtered);
+% hold on;
+% % MOD
+% plot3D_impVol(Market_EU_calibrated);
+% legend('MKT','MOD');
+% hold off;
 
 %%  ESTIMATE HISTORICAL CORRELATION BETWEEN THE TWO INDExES
 
@@ -605,12 +646,11 @@ price_black = black_pricing(Market_US_Black, Market_EU_Black, settlement, target
 price_levy = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
                                     alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, HistCorr, N_sim);
 %%
-rho = sqrt(kappa_EU*kappa_US)/nu_Z;
-% rho = sqrt(nu_US*nu_EU)/((nu_EU+nu_Z)*(nu_US*nu_Z));
+% rho = sqrt(kappa_EU*kappa_US)/nu_Z;
+rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
 % Compute the price of the derivative using the Lévy model
 price_levy = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
                                     alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim);
-
 
 
 %%
@@ -625,3 +665,6 @@ price_closed_formula = closedFormula(Market_US_Black, Market_EU_Black, settlemen
 
 price = levy_pricing_alternative(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
             theta_US, theta_EU, nu_US, a_US, a_EU, nu_EU, Beta_Z,gamma_Z,nu_Z, N_sim);
+
+
+% 
