@@ -20,38 +20,32 @@ function calibParams = compute_id_sy_parameters(sigma_US,kappa_US, theta_US,sigm
 % gamma_Z: parameter of the systematic shock process
 
 % Define the optimization variables
-id_sy_param = optimvar('id_sy_param',4);
+id_sy_param = optimvar('id_sy_param', 4);
 
-% a_US = x(1);
-% a_EU = x(2);
-% Beta_Z = x(3);
-% gamma_Z = x(4);
+% Define the equations as constraints
+equation_1 = id_sy_param(1) * id_sy_param(3) - (kappa_US * theta_US / nu_Z);
+equation_2 = id_sy_param(2) * id_sy_param(3) - (kappa_EU * theta_EU / nu_Z);
+equation_3 = kappa_US * sigma_US^2 - nu_Z * id_sy_param(1)^2 * id_sy_param(4)^2;
+equation_4 = kappa_EU * sigma_EU^2 - nu_Z * id_sy_param(2)^2 * id_sy_param(4)^2;
 
-% Define the equations
-equation_1 = id_sy_param(1) * id_sy_param(3) - (kappa_US * theta_US / nu_Z) == 0;
-equation_2 = id_sy_param(2) * id_sy_param(3) - (kappa_EU * theta_EU / nu_Z) == 0;
-equation_3 = kappa_US * sigma_US^2 - nu_Z * id_sy_param(1)^2 * id_sy_param(4) ^2  == 0;
-equation_4 = kappa_EU * sigma_EU^2 - nu_Z * id_sy_param(2)^2 * id_sy_param(4) ^2  == 0;
+% Define the optimization problem
+prob = optimproblem;
 
-% % Build a structure for the system of equations
-% prob = eqnproblem;
-% prob.Equations.eq1 = eq1;
-% prob.Equations.eq2 = eq2;
-% prob.Equations.eq3 = eq3;
-% prob.Equations.eq4 = eq4;
+% Add the equations as constraints to the problem
+prob.Constraints.equation_1 = equation_1 == 0;
+prob.Constraints.equation_2 = equation_2 == 0;
+prob.Constraints.equation_3 = equation_3 == 0;
+prob.Constraints.equation_4 = equation_4 == 0;
 
-% Build a system of equations
-system = eqnproblem;
-system.Equations.equation_1 = equation_1;
-system.Equations.equation_2 = equation_2;
-system.Equations.equation_3 = equation_3;
-system.Equations.equation_4 = equation_4;
+% Add the additional constraint id_sy_param(4) > 0
+prob.Constraints.constraint_1 = id_sy_param(4) >= 0;
 
 % Initial value
-id_sy_param_0.id_sy_param = ones(4,1);
+x0.id_sy_param = ones(4, 1);
 
-% Solve the system of equations
-solution = solve(system,id_sy_param_0);
+% Solve the optimization problem
+[solution, ~, ~, ~] = solve(prob, x0);
+
 
 % Extract the calibrated parameters
 a_US = solution.id_sy_param(1);

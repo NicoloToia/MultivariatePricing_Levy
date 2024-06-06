@@ -15,6 +15,9 @@ clc;
 % fix the seed
 rng(42); % the answer to everything
 
+% Compute Elapse Time
+tic
+
 %% ADD PATHS
 
 % add the path to the functions
@@ -215,9 +218,6 @@ dz_fft = 0.0025;
 % kappa_US = p(5)
 % theta_US = p(6)
 
-% Compute Elapse Time
-tic
-
 flag = 'NIG';
 
 if strcmp(flag, 'NIG')
@@ -248,15 +248,14 @@ b = [
 
 % Initial guess
 
-% p0 = [0.5 2 0.5 0.5 2 0.5];
 
-% p0 = [0.1 0.1 -0.1 0.1 0.1 -0.1];
+% p0 = [0.1 0.1 -0.1 0.1 0.1 -0.1];%1
 
-% p0 = [0.15 0.3 -0.5 0.15 0.3 -0.5];
+p0 = [0.15 0.3 -0.5 0.15 0.3 -0.5];%2
 
-% p0 = [0.13 0.1 -0.1 0.16 0.1 -0.1];
+p0 = [0.13 0.1 -0.1 0.13 0.1 -0.1];%3
 
-p0 = 0.3*ones(1,6);
+% p0 = 0.5*ones(6,1);%4
 
 % Non linear constraints    
 const = @(x) constraint(x, alpha);
@@ -268,12 +267,13 @@ ub = [];
 
 % options
 % options = optimset('Display', 'iter');
-options = optimoptions('fmincon',...
-    'OptimalityTolerance', 1e-7, ...
-    'TolFun', 1e-5, ...
-    'ConstraintTolerance', 1e-5,...
-    'Display', 'iter');
-% options = optimoptions('fmincon', 'Display', 'off');
+% options = optimoptions('fmincon',...
+%     'OptimalityTolerance', 1e-7, ...
+%     'TolFun', 1e-5, ...
+%     'ConstraintTolerance', 1e-5,...
+%     'Display', 'iter');
+options = optimset('MaxFunEvals', 3e3, 'Display', 'iter');
+
 
 % Optimization
 calibrated_param = fmincon(obj_fun, p0, A, b, [], [], lb, ub, const, options);
@@ -281,9 +281,6 @@ calibrated_param = fmincon(obj_fun, p0, A, b, [], [], lb, ub, const, options);
 % Loro phi
 % calibrated_param = [0.124591312025052 0.825923977978176 -0.162083449192270 0.155780648904408 3.82951110965306128 -0.094115856301092];
 
-% End elapse time 
-toc
-%%
 % print the results
 disp('---------------------------------------------------------------------')
 disp('The optimal parameters are:');
@@ -352,18 +349,19 @@ Aeq = [];
 beq = [];
 lb = [0 0 max(kappa_US, kappa_EU)]; 
 ub = [];
-% lb = zeros(1,3);
+% lb = zeros(3,1);
 % lb = [0 0 3];
 
 constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU, corrHist);
 % options
 % options = optimoptions('fmincon', 'Display', 'off');
 % options = optimset('MaxFunEvals', 3e3, 'ConstraintTolerance', 10^-4, 'Display', 'iter');
-options = optimoptions('fmincon',...
-    'OptimalityTolerance', 1e-6, ...
-    'TolFun', 1e-4, ...
-    'ConstraintTolerance', 1e-3,...
-    'Display', 'off');
+% options = optimoptions('fmincon',...
+%     'OptimalityTolerance', 1e-6, ...
+%     'TolFun', 1e-4, ...
+%     'ConstraintTolerance', 1e-3,...
+%     'Display', 'ITER');
+options = optimset('MaxFunEvals', 3e3, 'Display', 'iter');
 
 % calibration of the parameters
 nu_calibrated = fmincon(obFun, 0.5*ones(1,3), A, b, Aeq, beq, lb, ub, constNU, options);
@@ -646,8 +644,8 @@ N_sim = 1e7;
 [price_levy, CI_levy] = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
                                     alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, HistCorr, N_sim, flag);
 %%
-% rho = sqrt(kappa_EU*kappa_US)/nu_Z;
-rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
+rho = sqrt(kappa_EU*kappa_US)/nu_Z;
+% rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
 % rho = corrHist;
 
 % Compute the price of the derivative using the Lévy model
@@ -699,3 +697,7 @@ disp('---------------------------------------------------------');
 for i = 1:length(method_names)
     fprintf('%-20s | %.4f     | %s\n', results{i, 1}, results{i, 2}, results{i, 3});
 end
+
+%%
+% End elapse time 
+toc
