@@ -26,12 +26,8 @@ for ii = 1:length(maturity)
     rate = -log(B0)/maturity(ii);
 
     % Compute call prices via black
-    callPrices = blkprice(F0, strikes, rate, maturity(ii), sigma);
+    [callPrices, putPrices] = blkprice(F0, strikes, rate, maturity(ii), sigma);
    
-    % Put-call parity (Black model)
-    putPrices = max(callPrices - B0*(F0 - strikes),0);
-    % the max is used to avoid negative prices, due to numeric
-
     % Extract the model prices for calls and puts
     % Find indexes
     OTM_put_index = sum((strikes <= F0) == 1);

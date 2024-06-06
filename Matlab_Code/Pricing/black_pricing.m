@@ -1,4 +1,4 @@
-function price = black_pricing(Market_US, Market_EU, setDate, targetDate, MeanBMs, rho, N_sim)
+function [price, priceCI] = black_pricing(Market_US, Market_EU, setDate, targetDate, MeanBMs, rho, N_sim)
 % This function computes the price of a derivative with the following payoff:
 % Payoff = max(S1(t) - S1(0), 0)*I(S2(t) < 0.95*S2(0))
 %
@@ -68,11 +68,5 @@ a = 0.01;
 CI = norminv(1-a)*std(payoff)/sqrt(N_sim);
 priceCI = [price - CI, price + CI];
 
-
-% Display the results
-fprintf('------------------------------------------------------------------\n');
-fprintf('The price of the derivative via Black model is: %.4f\n', price);
-fprintf('The confidence interval is: [%.4f, %.4f]\n', priceCI(1), priceCI(2));
-fprintf('------------------------------------------------------------------\n');
 
 end

@@ -10,8 +10,6 @@ function price_closed_formula = closedFormula(Market_US, Market_EU, setDate, tar
 % targetDate: maturity of the derivative
 % rho: correlation between the markets
 %
-% USES:
-% function intExtDF 
 
 ACT_365 = 3;
 
@@ -58,10 +56,4 @@ I = integral(fun, x_min, x_max);
 % price closed formula
 price_closed_formula = discount_US * S0_US *I;
 
-% disp the price of the derivative
-disp(' ');
-disp(['The price of the derivative (Closed Formula) is: ', num2str(price_closed_formula)]);
-disp(' ');
-
-
-end % end function closedFormula
+end 
