@@ -191,7 +191,7 @@ close all;
 %% 3D plot
 
 % Plot the 3D implied volatility surface for the EU market
-plot3d_impl_vol_new(Market_EU_filtered)
+% plot3d_impl_vol_new(Market_EU_filtered)
 
 % Plot the 3D implied volatility surface for the US market
 % plot3d_impl_vol_new(Market_US_filtered)
@@ -363,7 +363,7 @@ options = optimoptions('fmincon',...
     'OptimalityTolerance', 1e-6, ...
     'TolFun', 1e-4, ...
     'ConstraintTolerance', 1e-3,...
-    'Display', 'iter');
+    'Display', 'off');
 
 % calibration of the parameters
 nu_calibrated = fmincon(obFun, 0.5*ones(1,3), A, b, Aeq, beq, lb, ub, constNU, options);

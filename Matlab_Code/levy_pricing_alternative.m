@@ -77,6 +77,10 @@ if strcmp(flag, 'NIG')
     G_US = random('inverseGaussian', 1, ttm/nu_US,[nSim, 1]);
     G_EU =  random('inverseGaussian', 1, ttm/nu_EU,[nSim, 1]);
     G_Z = random('inverseGaussian', 1, ttm/nu_Z,[nSim, 1]);
+
+    drift_compensator_YEU = - ttm/nu_EU * (1 - sqrt( 1 - 2 * nu_EU * Beta_EU - nu_EU * gamma_EU^2));
+    drift_compensator_YUS = - ttm/nu_US * (1 - sqrt( 1 - 2 * nu_US * Beta_US - nu_US * gamma_US^2));
+    drift_compensator_Z   = - ttm/nu_Z  * (1 - sqrt( 1 - 2 * nu_Z * Beta_Z - nu_Z * gamma_Z^2));
 elseif strcmp(flag, 'VG')
     % VG
     drift_compensator_US = 1/kappa_US * log(1 - theta_US * kappa_US - (sigma_US^2 * kappa_US)/2);
@@ -85,6 +89,10 @@ elseif strcmp(flag, 'VG')
     G_US = random('Gamma', 1, ttm/nu_US,[nSim, 1]);
     G_EU =  random('Gamma', 1, ttm/nu_EU,[nSim, 1]);
     G_Z = random('Gamma', 1, ttm/nu_Z,[nSim, 1]);
+
+    drift_compensator_YEU = ttm/nu_EU * log(1 - nu_EU * Beta_EU - (nu_EU * gamma_EU^2)/2);
+    drift_compensator_YUS = ttm/nu_US * log(1 - nu_US * Beta_US - (nu_US * gamma_US^2)/2);
+    drift_compensator_Z   = ttm/nu_Z * log(1 - nu_Z * Beta_Z - (nu_Z * gamma_Z^2)/2);
 else
     error('Flag not recognized');
 end
@@ -95,41 +103,30 @@ g = randn(nSim, 3);
 % G_EU =  random('inverseGaussian', 1, ttm/nu_EU,[nSim, 1]);
 % G_Z = random('inverseGaussian', 1, ttm/nu_Z,[nSim, 1]);
 
-% inverse gaussian
-drift_compensator_YEU = -1/nu_EU * (1 - sqrt( 1 - 2 * nu_EU * Beta_EU - nu_EU * gamma_EU^2));
-drift_compensator_YUS = -1/nu_US * (1 - sqrt( 1 - 2 * nu_US * Beta_US - nu_US * gamma_US^2));
-drift_compensator_Z   = -1/nu_Z  * (1 - sqrt( 1 - 2 * nu_Z * Beta_Z - nu_Z * gamma_Z^2));
-
-Y_US = - gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
-Y_EU = - gamma_EU^2 * (0.5 + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
-
-Z = - gamma_Z^2 * ( 0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
+% Idyosyncratic processes
+Y_US =   - gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
+Y_EU =  - gamma_EU^2 * (0.5 + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
+% Systematic process
+Z =  - gamma_Z^2 * ( 0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
 
 % Marginal processes
 X_US = Y_US + a_US * Z;
 X_EU = Y_EU + a_EU * Z;
 
-S_EU = spot_EU * exp((rate_EU + drift_compensator_EU)*ttm + X_EU);
-S_US = spot_US * exp((rate_US + drift_compensator_US)*ttm + X_US);
+% S_EU = spot_EU * exp((rate_EU + drift_compensator_EU)*ttm + X_EU);
+% S_US = spot_US * exp((rate_US + drift_compensator_US)*ttm + X_US);
 
 F0_EU = spot_EU/discount_EU;
 F0_US = spot_US/discount_US;
 
-% S_EU = F0_EU * exp(drift_compensator_EU*ttm + X_EU);
-% S_US = F0_US * exp(drift_compensator_US*ttm + X_US);
+S_EU = F0_EU * exp(drift_compensator_EU*ttm + X_EU);
+S_US = F0_US * exp(drift_compensator_US*ttm + X_US);
 
 ind_fun = (S_EU < 0.95 * spot_EU);
 
 payoff = max(S_US - spot_US, 0) .* ind_fun;
 
 price = discount_US * mean(payoff);
-
-% % indicator function 
-% Indicator_function = (spot_EU * exp((rate_EU + drift_compensator_EU)*ttm + X_EU)< 0.95 * spot_EU);
-
-% payoff = max( spot_US * exp((rate_US + drift_compensator_US)*ttm + X_US) - spot_US, 0) .* Indicator_function;
-
-% price = mean(discount_US * mean(payoff));
 
 % confidence interval
 a = 0.01;
