@@ -27,16 +27,21 @@ if flag == 1
         if implied_vol_shifted(ii + 1) > implied_vol(ii)
             % remove the strike
             Market_filtered.strikes(idx).value(ii) = [];
-
+            
             % remove the call prices
             Market_filtered.callBid(idx).prices(ii) = [];
             Market_filtered.callAsk(idx).prices(ii) = [];
             Market_filtered.midCall(idx).value(ii) = [];
 
+
             % remove the put prices
             Market_filtered.putBid(idx).prices(ii) = [];
             Market_filtered.putAsk(idx).prices(ii) = [];
             Market_filtered.midPut(idx).value(ii) = [];
+            
+            % remove volumes
+            Market_filtered.Volume_call(idx).volume(ii) = [];
+            Market_filtered.Volume_put(idx).volume(ii) = [];
 
             % remove the implied volatility
             Market_filtered.OTM_ImpVol(idx).value(ii) = [];
@@ -53,6 +58,7 @@ end
 implied_vol = Market_filtered.OTM_ImpVol(idx).value;
 strikes = Market_filtered.strikes(idx).value;
 
+
 for ii = 1:length(strikes) - 1
     if implied_vol(ii + 1) > implied_vol(ii)
         % remove the strike
@@ -67,6 +73,10 @@ for ii = 1:length(strikes) - 1
         Market_filtered.putBid(idx).prices(ii) = [];
         Market_filtered.putAsk(idx).prices(ii) = [];
         Market_filtered.midPut(idx).value(ii) = [];
+
+        % remove volumes
+        Market_filtered.Volume_call(idx).volume(ii) = [];
+        Market_filtered.Volume_put(idx).volume(ii) = [];
         
         % remove the implied volatility
         Market_filtered.OTM_ImpVol(idx).value(ii) = [];

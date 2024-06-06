@@ -1,4 +1,4 @@
-function price = levy_pricing_alternative(Market_US, Market_EU, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
+function [price, priceCI] = levy_pricing_alternative(Market_US, Market_EU, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
             theta_US, theta_EU, nu_US, a_US, a_EU, nu_EU, Beta_Z,gamma_Z,nu_Z, nSim)
 % This function computes the price of a barrier option using the Levy pricing alternative
 %
@@ -65,10 +65,10 @@ drift_compensator_YEU = -1/nu_EU * (1 - sqrt( 1 - 2 * nu_EU * Beta_EU - nu_EU * 
 drift_compensator_YUS = -1/nu_US * (1 - sqrt( 1 - 2 * nu_US * Beta_US - nu_US * gamma_US^2));
 drift_compensator_Z   = -1/nu_Z  * (1 - sqrt( 1 - 2 * nu_Z * Beta_Z - nu_Z * gamma_Z^2));
 
-Y_US = - gamma_US^2 * (+ Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
-Y_EU = - gamma_EU^2 * ( + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
+Y_US = - gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
+Y_EU = - gamma_EU^2 * (0.5 + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
 
-Z = - gamma_Z^2 * ( + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
+Z = - gamma_Z^2 * ( 0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
 
 % Marginal processes
 X_US = Y_US + a_US * Z;
@@ -96,8 +96,9 @@ price = discount_US * mean(payoff);
 
 % price = mean(discount_US * mean(payoff));
 
-% print the price
-disp('--------------------------------------------------------------------')
-disp(['The price is: ', num2str(price)]);
+% confidence interval
+a = 0.01;
+CI = norminv(1-a)*std(payoff)/sqrt(nSim);
+priceCI = [price - CI, price + CI];
 
-end % end function levy pricing alternative
+end 

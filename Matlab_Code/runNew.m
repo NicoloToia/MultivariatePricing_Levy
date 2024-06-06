@@ -187,7 +187,7 @@ plot_ImpVol(Market_EU_filtered, 'EU OTM Implied Volatility Smile (Filtered)');
 % Plot the filtered implied volatility smiles for the US market
 plot_ImpVol(Market_US_filtered, 'US OTM Implied Volatility Smile (Filtered)');
 
-% close all;
+close all;
 %% 3D plot
 
 % Plot the 3D implied volatility surface for the EU market
@@ -258,7 +258,7 @@ b = [
 
 p0 = 0.3*ones(1,6);
 
-% Non linear constraints
+% Non linear constraints    
 const = @(x) constraint(x, alpha);
 % lower bound
 lb = [0 0 -inf 0 0 -inf];
@@ -355,7 +355,7 @@ ub = [];
 % lb = zeros(1,3);
 % lb = [0 0 3];
 
-constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU);
+constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU, corrHist);
 % options
 % options = optimoptions('fmincon', 'Display', 'off');
 % options = optimset('MaxFunEvals', 3e3, 'ConstraintTolerance', 10^-4, 'Display', 'iter');
@@ -639,17 +639,17 @@ MeanBMs = [0;
 N_sim = 1e7;
 
 % Compute the price of the derivative using the Black model
-price_black = black_pricing(Market_US_Black, Market_EU_Black, settlement, targetDate, MeanBMs, HistCorr, N_sim);
+[price_black, CI_black] = black_pricing(Market_US_Black, Market_EU_Black, settlement, targetDate, MeanBMs, HistCorr, N_sim);
 
 %%
 % Compute the price of the derivative using the Lévy model
-price_levy = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
+[price_levy, CI_levy] = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
                                     alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, HistCorr, N_sim);
 %%
 % rho = sqrt(kappa_EU*kappa_US)/nu_Z;
 rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
 % Compute the price of the derivative using the Lévy model
-price_levy = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
+[price_levy, CI_levy] = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
                                     alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim);
 
 
@@ -663,8 +663,37 @@ price_closed_formula = closedFormula(Market_US_Black, Market_EU_Black, settlemen
 %%
 % alternative
 
-price = levy_pricing_alternative(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
+[price_alt, CI_levy_alt] = levy_pricing_alternative(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, sigma_US, sigma_EU, kappa_US, kappa_EU,...
             theta_US, theta_EU, nu_US, a_US, a_EU, nu_EU, Beta_Z,gamma_Z,nu_Z, N_sim);
 
 
-% 
+%%
+
+% Define the method names
+method_names = {'Black Model', 'Lévy Model', 'Closed Formula', 'Alternative Lévy'};
+
+% Define the prices
+prices = [price_black, price_levy, price_closed_formula, price_alt];
+
+% Define the confidence intervals (NaN for those without a confidence interval)
+CI = {CI_black, CI_levy, NaN(1, 2), CI_levy_alt};
+
+% Create a cell array to store the results
+results = cell(length(method_names), 3);
+
+for i = 1:length(method_names)
+    results{i, 1} = method_names{i};
+    results{i, 2} = prices(i);
+    if isnan(CI{i}(1))
+        results{i, 3} = 'N/A';
+    else
+        results{i, 3} = sprintf('[%.4f, %.4f]', CI{i}(1), CI{i}(2));
+    end
+end
+
+% Print the results in a table format
+disp('Method                | Price       | Confidence Interval');
+disp('---------------------------------------------------------');
+for i = 1:length(method_names)
+    fprintf('%-20s | %.4f     | %s\n', results{i, 1}, results{i, 2}, results{i, 3});
+end

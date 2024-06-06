@@ -75,30 +75,30 @@ for ii = 1:min(length(TTM),19)
     OTM_put_market = put(1:OTM_put_index);
 
     % ******************************************************************
-    % w_call = Market.Volume_call(ii).volume; 
-    % w_put = Market.Volume_put(ii).volume;
+    w_call = Market.Volume_call(ii).volume; 
+    w_put = Market.Volume_put(ii).volume;
 
-    % % Pesi
-    % pes_put_long = w_put.*(strikes <= F0);
-    % pes_put = pes_put_long(pes_put_long~=0);
-    % pes_call_long = w_call.*(strikes > F0);
-    % pes_call = pes_call_long(pes_call_long~=0);
+    % Pesi
+    pes_put_long = w_put.*(strikes <= F0);
+    pes_put = pes_put_long(pes_put_long~=0);
+    pes_call_long = w_call.*(strikes > F0);
+    pes_call = pes_call_long(pes_call_long~=0);
 
-    % w = [pes_call;pes_put];
+    w = [pes_call;pes_put];
     % ******************************************************************
 
     % Compute the RMSE
-    % rmse_vett(ii) = rmse( [OTM_call_model; OTM_put_model], ...
-    %    [OTM_call_market; OTM_put_market], W = w );
+    rmse_vett(ii) = rmse( [OTM_call_model; OTM_put_model], ...
+       [OTM_call_market; OTM_put_market], W = w );
 
-    rmse_vett(ii) = rmse( [OTM_put_model; OTM_call_model], ...
-    [OTM_put_market; OTM_call_market]);
+    % rmse_vett(ii) = rmse( [OTM_put_model; OTM_call_model], ...
+    % [OTM_put_market; OTM_call_market]);
         
 end
 
 % Compute the total RMSE
-% rmse_tot = sum(weights.*rmse_vett);
+rmse_tot = sum(weights.*rmse_vett);
 
-rmse_tot = sum(rmse_vett);
+% rmse_tot = sum(rmse_vett);
 
 end

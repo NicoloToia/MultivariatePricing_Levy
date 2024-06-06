@@ -1,4 +1,4 @@
-function price = levy_pricing(Market_US, Market_EU, settlement, targetDate, ...
+function [price, priceCI] = levy_pricing(Market_US, Market_EU, settlement, targetDate, ...
                                 alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim)
 % This function computes the price of a derivative using a Monte Carlo simulation under Lévy processes
 % 
@@ -76,11 +76,5 @@ price = discount_US * mean(payoff);
 a = 0.01;
 CI = norminv(1-a)*std(payoff)/sqrt(N_sim);
 priceCI = [price - CI, price + CI];
-
-% Display the results
-fprintf('------------------------------------------------------------------\n');
-fprintf('The price of the derivative is: %.4f\n', price);
-fprintf('The confidence interval is: [%.4f, %.4f]\n', priceCI(1), priceCI(2));
-fprintf('------------------------------------------------------------------\n');
 
 end
