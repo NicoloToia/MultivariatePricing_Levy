@@ -1,4 +1,4 @@
-function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, alpha, M, dz)
+function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, alpha, M, dz, flag)
 % This function computes the root mean squared error (RMSE) between the model and the market prices for each
 % maturity and each strike. The calibation is performed considering both markets.
 %
@@ -52,7 +52,7 @@ for ii = 1:min(length(TTM),19)
     log_moneyness = log(F0./strikes);
 
     % Compute the call prices via Lewis formula
-    callPrices = callIntegral(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz, 'FFT');
+    callPrices = callIntegral(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz, flag);
 
     % Compute the put prices via put-call parity
     putPrices = callPrices - B0*(F0 - strikes);

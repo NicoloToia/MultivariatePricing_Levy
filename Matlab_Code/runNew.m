@@ -194,7 +194,7 @@ plot_ImpVol(Market_US_filtered, 'US OTM Implied Volatility Smile (Filtered)');
 % plot3d_impl_vol_new(Market_EU_filtered)
 
 % Plot the 3D implied volatility surface for the US market
-plot3d_impl_vol_new(Market_US_filtered)
+% plot3d_impl_vol_new(Market_US_filtered)
 
 
 %% CALIBRATION
