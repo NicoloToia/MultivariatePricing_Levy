@@ -18,18 +18,21 @@ function [c, ceq] = cosnt_Nu(nus, kappa_US, kappa_EU, rho)
 % nu_EU = nus(2);
 % nu_Z = nus(3);
 
+c = [];
+
 % Inequality constraints
 c = [- (sqrt(kappa_EU * kappa_US)/ nus(3)) + rho;
      - sqrt((nus(1) * nus(2)) / ((nus(1) + nus(3)) * (nus(2) + nus(3)))) + rho];
 
 % Equality constraints
-% ceq = [nus(1)*nus(3)/(nus(1)+nus(3)) - kappa_US;
-%        nus(2)*nus(3)/(nus(2)+nus(3)) - kappa_EU;
-%         sqrt((nus(1) * nus(2)) / ((nus(1) + nus(3)) * (nus(2) + nus(3)))) - (sqrt(kappa_EU * kappa_US)/ nus(3))];
-
-
-ceq = [ kappa_US - (nus(1)*nus(3))/(nus(1)+nus(3));
-        kappa_EU - (nus(2)*nus(3))/(nus(2)+nus(3))
+ceq = [sqrt((nus(1) * nus(2)) / ((nus(1) + nus(3)) * (nus(2) + nus(3)))) - (sqrt(kappa_EU * kappa_US)/ nus(3));
+        nus(1)*nus(3)/(nus(1)+nus(3)) - kappa_US;
+        nus(2)*nus(3)/(nus(2)+nus(3)) - kappa_EU;
         ];
+
+
+% ceq = [ kappa_US - (nus(1)*nus(3))/(nus(1)+nus(3));
+%         kappa_EU - (nus(2)*nus(3))/(nus(2)+nus(3))
+%         ];
 
 end

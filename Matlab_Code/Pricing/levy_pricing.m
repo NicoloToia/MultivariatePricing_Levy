@@ -65,13 +65,25 @@ if strcmp(flag, 'NIG')
     ft_US = sqrt(ttm) * sigma_US * sqrt(G_US) .* g(:,2) - (0.5 + theta_US) * ttm * sigma_US^2 * G_US...
                 + compensatorUS_NIG;
 elseif strcmp(flag, 'VG')
-    % draw the variance gamma random variables
-    G_EU = random('Gamma', 1, ttm/kappa_EU, N_sim, 1);
-    G_US = random('Gamma', 1, ttm/kappa_US, N_sim, 1);
-
     % VG model
     compensatorEU_VG = ttm./kappa_EU * log(1 - theta_EU * kappa_EU - (sigma_EU^2 * kappa_EU)/2);
     compensatorUS_VG = ttm./kappa_US * log(1 - theta_US * kappa_US - (sigma_US^2 * kappa_US)/2);
+
+    % draw the variance gamma random variables
+    Y=zeros(N_sim,1);
+    % Sample dS -> increments of a Gamma
+    dS=kappa_EU*icdf('gamma',rand(N_sim,1),ttm/kappa_EU,1);
+    % Sample the VG
+    Y(:,1)=Y(:,1)+1*dS+sigma_EU*sqrt(dS).*randn(N_sim,1);
+    G_EU = Y;
+
+    X=zeros(N_sim,1);
+    % Sample dS -> increments of a Gamma
+    dS=kappa_US*icdf('gamma',rand(N_sim,1),ttm/kappa_US,1);
+    % Sample the VG
+    X(:,1)=X(:,1)+1*dS+sigma_US*sqrt(dS).*randn(N_sim,1);
+    G_US = X;
+
 
     ft_EU = sqrt(ttm) * sigma_EU * sqrt(G_EU) .* g(:,1) - (0.5 + theta_EU) * ttm * sigma_EU^2 * G_EU...
                 + compensatorEU_VG;

@@ -97,8 +97,8 @@ for ii = 1:min(length(TTM),19)
 end
 
 % Compute the total RMSE
-% rmse_tot = sum(weights.*rmse_vett);
+rmse_tot = sum(weights.*rmse_vett);
 
-rmse_tot = sum(rmse_vett);
+% rmse_tot = sum(rmse_vett);
 
 end
