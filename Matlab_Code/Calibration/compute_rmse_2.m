@@ -11,6 +11,7 @@ function rmse_tot = compute_rmse_2(Market, TTM, sigma, kappa, theta, alpha, M, d
 % alpha: Model parameter (NIG --> alpha = 0.5)
 % M: N = 2^M is the number of points in the grid
 % dz: grid spacing
+% flag: model selection NIG or VG
 %
 % OUTPUTS
 %
@@ -87,15 +88,10 @@ for ii = 1:min(length(TTM),20)
     % Compute the RMSE
    rmse_vett(ii) = rmse( [OTM_put_model_f; OTM_call_model_f], ...
     [OTM_put_market_f; OTM_call_market_f]);
-
-    % rmse_vett(ii) = rmse( [OTM_put_model; OTM_call_model], ...
-    %     [OTM_put_market; OTM_call_market]);
         
 end
 
 % Compute the total RMSE
-% rmse_tot = sum(weights.*rmse_vett);
-
-rmse_tot = sum(rmse_vett);
+rmse_tot = sum(weights.*rmse_vett);
 
 end
