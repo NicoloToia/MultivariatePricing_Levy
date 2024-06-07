@@ -80,7 +80,7 @@ if strcmp(flag, 'NIG')
 
     drift_compensator_YEU = - ttm/nu_EU * (1 - sqrt( 1 - 2 * nu_EU * Beta_EU - nu_EU * gamma_EU^2));
     drift_compensator_YUS = - ttm/nu_US * (1 - sqrt( 1 - 2 * nu_US * Beta_US - nu_US * gamma_US^2));
-    drift_compensator_Z   = - ttm/nu_Z  * (1 - sqrt( 1 - 2 * nu_Z * Beta_Z - nu_Z * gamma_Z^2));ù
+    drift_compensator_Z   = - ttm/nu_Z  * (1 - sqrt( 1 - 2 * nu_Z * Beta_Z - nu_Z * gamma_Z^2));
 
 elseif strcmp(flag, 'VG')
     % VG
