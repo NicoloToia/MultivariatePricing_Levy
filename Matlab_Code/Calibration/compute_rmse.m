@@ -11,6 +11,7 @@ function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, alpha, M, dz,
 % alpha: Model parameter (NIG --> alpha = 0.5)
 % M: N = 2^M is the number of points in the grid
 % dz: grid spacing
+% flag: model selection: NIG or VG
 %
 % OUTPUTS
 %
@@ -19,8 +20,12 @@ function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, alpha, M, dz,
 % Initialize rmse vector
 rmse_vett = zeros(length(TTM), 1);
 
+% Select the kind of weights to use
+
 % Compute weights to overweight short maturities errors on prices
 weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
+
+% compute the weights to overweight the maturiies around the derivative pricing
 
 % settlement = datenum("07/09/2023");
 % targetDate = datetime(settlement, 'ConvertFrom', 'datenum') + calyears(1);
@@ -74,6 +79,7 @@ for ii = 1:min(length(TTM),19)
     % Put prices for OTM options
     OTM_put_market = put(1:OTM_put_index);
 
+    % %volumes weights, uncomment to use them
     % % ******************************************************************
     % w_call = Market.Volume_call(ii).volume; 
     % w_put = Market.Volume_put(ii).volume;
@@ -88,17 +94,23 @@ for ii = 1:min(length(TTM),19)
     % % ******************************************************************
 
     % % Compute the RMSE
+
+    % % uncomment to use the volumes weights
     % rmse_vett(ii) = rmse( [OTM_call_model; OTM_put_model], ...
     %    [OTM_call_market; OTM_put_market], W = w );
 
+    % comment to use the volumes weights
     rmse_vett(ii) = rmse( [OTM_put_model; OTM_call_model], ...
     [OTM_put_market; OTM_call_market]);
         
 end
 
 % Compute the total RMSE
+
+% uncomment to use time weights
 rmse_tot = sum(weights.*rmse_vett);
 
+% % comment to use time weights
 % rmse_tot = sum(rmse_vett);
 
 end
