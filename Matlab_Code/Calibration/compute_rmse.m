@@ -22,24 +22,24 @@ rmse_vett = zeros(length(TTM), 1);
 % Compute weights to overweight short maturities errors on prices
 weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
 
-settlement = datenum("07/09/2023");
-targetDate = datetime(settlement, 'ConvertFrom', 'datenum') + calyears(1);
-targetDate(~isbusday(targetDate, eurCalendar())) = busdate(targetDate(~isbusday(targetDate, eurCalendar())), 'modifiedfollow', eurCalendar());
-targetDate = datenum(targetDate);
+% settlement = datenum("07/09/2023");
+% targetDate = datetime(settlement, 'ConvertFrom', 'datenum') + calyears(1);
+% targetDate(~isbusday(targetDate, eurCalendar())) = busdate(targetDate(~isbusday(targetDate, eurCalendar())), 'modifiedfollow', eurCalendar());
+% targetDate = datenum(targetDate);
 
 
-% Calculate the difference in days from the target date
-daysDiff = abs(datenum(Market.datesExpiry) - (targetDate));
+% % Calculate the difference in days from the target date
+% daysDiff = abs(datenum(Market.datesExpiry) - (targetDate));
 
-% Convert the differences to weights using an exponential decay function
-decayRate = 0.01; % Adjust decay rate as needed
-weights = exp(-decayRate * daysDiff);
+% % Convert the differences to weights using an exponential decay function
+% decayRate = 0.01; % Adjust decay rate as needed
+% weights = exp(-decayRate * daysDiff);
 
-% Normalize the weights
-weights = (weights' / sum(weights));
+% % Normalize the weights
+% weights = (weights' / sum(weights));
 
 % Cycle over expiries
-for ii = 1:min(length(TTM),20)
+for ii = 1:min(length(TTM),19)
 
     % Import data from the Market struct
     F0 = Market.F0(ii).value;
@@ -74,25 +74,25 @@ for ii = 1:min(length(TTM),20)
     % Put prices for OTM options
     OTM_put_market = put(1:OTM_put_index);
 
-    % ******************************************************************
-    w_call = Market.Volume_call(ii).volume; 
-    w_put = Market.Volume_put(ii).volume;
+    % % ******************************************************************
+    % w_call = Market.Volume_call(ii).volume; 
+    % w_put = Market.Volume_put(ii).volume;
 
-    % Pesi
-    pes_put_long = w_put.*(strikes <= F0);
-    pes_put = pes_put_long(pes_put_long~=0);
-    pes_call_long = w_call.*(strikes > F0);
-    pes_call = pes_call_long(pes_call_long~=0);
+    % % Pesi
+    % pes_put_long = w_put.*(strikes <= F0);
+    % pes_put = pes_put_long(pes_put_long~=0);
+    % pes_call_long = w_call.*(strikes > F0);
+    % pes_call = pes_call_long(pes_call_long~=0);
 
-    w = [pes_call;pes_put];
-    % ******************************************************************
+    % w = [pes_call;pes_put];
+    % % ******************************************************************
 
-    % Compute the RMSE
-    rmse_vett(ii) = rmse( [OTM_call_model; OTM_put_model], ...
-       [OTM_call_market; OTM_put_market], W = w );
+    % % Compute the RMSE
+    % rmse_vett(ii) = rmse( [OTM_call_model; OTM_put_model], ...
+    %    [OTM_call_market; OTM_put_market], W = w );
 
-    % rmse_vett(ii) = rmse( [OTM_put_model; OTM_call_model], ...
-    % [OTM_put_market; OTM_call_market]);
+    rmse_vett(ii) = rmse( [OTM_put_model; OTM_call_model], ...
+    [OTM_put_market; OTM_call_market]);
         
 end
 

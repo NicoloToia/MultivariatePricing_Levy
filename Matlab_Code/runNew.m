@@ -218,7 +218,7 @@ dz_fft = 0.0025;
 % kappa_US = p(5)
 % theta_US = p(6)
 
-flag = 'NIG';
+flag = 'VG';
 
 if strcmp(flag, 'NIG')
     alpha = 0.5;
@@ -249,13 +249,15 @@ b = [
 % Initial guess
 
 
-% p0 = [0.1 0.1 -0.1 0.1 0.1 -0.1];%1
+p0 = [0.1 0.1 -0.1 0.1 0.1 -0.1];%1
 
-p0 = [0.15 0.3 -0.5 0.15 0.3 -0.5];%2
+% p0 = [0.15 0.3 -0.5 0.15 0.3 -0.5];%2
 
 p0 = [0.13 0.1 -0.1 0.13 0.1 -0.1];%3
 
-% p0 = 0.5*ones(6,1);%4
+p0 = 0.5*ones(6,1);%4
+
+% p0 = [0.20 0.01 -1 0.20 0.01 -1]; %5 buono rmse2
 
 % Non linear constraints    
 const = @(x) constraint(x, alpha);
@@ -644,8 +646,8 @@ N_sim = 1e7;
 [price_levy, CI_levy] = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
                                     alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, HistCorr, N_sim, flag);
 %%
-rho = sqrt(kappa_EU*kappa_US)/nu_Z;
-% rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
+% rho = sqrt(kappa_EU*kappa_US)/nu_Z;
+rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
 % rho = corrHist;
 
 % Compute the price of the derivative using the Lévy model

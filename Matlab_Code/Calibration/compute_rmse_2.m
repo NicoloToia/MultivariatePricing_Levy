@@ -1,4 +1,4 @@
-function rmse_tot = compute_rmse_2(Market, TTM, sigma, kappa, theta, alpha, M, dz)
+function rmse_tot = compute_rmse_2(Market, TTM, sigma, kappa, theta, alpha, M, dz, flag)
 % This function computes the root mean squared error (RMSE) between the model and the market prices for each
 % maturity and each strike. The calibation is performed considering both markets.
 %
@@ -23,7 +23,7 @@ rmse_vett = zeros(length(TTM), 1);
 weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
 
 % Cycle over expiries
-for ii = 1:min(length(TTM),19)
+for ii = 1:min(length(TTM),20)
 
     % Import data from the Market struct
     F0 = Market.F0(ii).value;
@@ -40,7 +40,7 @@ for ii = 1:min(length(TTM),19)
     log_moneyness = log(F0./strikes);
 
     % Compute the call prices via Lewis formula
-    callPrices = callIntegral(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz, 'FFT');
+    callPrices = callIntegral(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz, flag);
 
     % Compute the put prices via put-call parity
     putPrices = callPrices - B0*(F0 - strikes);
@@ -70,32 +70,32 @@ for ii = 1:min(length(TTM),19)
     % if so remove the point from the RMSE computation
     % do it if the vector has no nan values
 
-    % if ~any(isnan(OTM_call_model)) && ~any(isnan(OTM_put_model))
+    if ~any(isnan(OTM_call_model)) && ~any(isnan(OTM_put_model))
 
-    %     OTM_call_model_f = OTM_call_model(OTM_call_model > OTM_call_market_ask' | OTM_call_model < OTM_call_market_bid');
-    %     OTM_put_model_f = OTM_put_model(OTM_put_model > OTM_put_market_ask' | OTM_put_model < OTM_put_market_bid');
-    %     OTM_call_market_f = OTM_call_market(OTM_call_model > OTM_call_market_ask' | OTM_call_model < OTM_call_market_bid');
-    %     OTM_put_market_f = OTM_put_market(OTM_put_model > OTM_put_market_ask' | OTM_put_model < OTM_put_market_bid');
+        OTM_call_model_f = OTM_call_model(OTM_call_model > OTM_call_market_ask' | OTM_call_model < OTM_call_market_bid');
+        OTM_put_model_f = OTM_put_model(OTM_put_model > OTM_put_market_ask' | OTM_put_model < OTM_put_market_bid');
+        OTM_call_market_f = OTM_call_market(OTM_call_model > OTM_call_market_ask' | OTM_call_model < OTM_call_market_bid');
+        OTM_put_market_f = OTM_put_market(OTM_put_model > OTM_put_market_ask' | OTM_put_model < OTM_put_market_bid');
 
-    % else
-    %     continue
-    % end
+    else
+        continue
+    end
 
     % same cycle as before but if the model price is inside the bid-ask spread
     % set the value to be equal to the mid market price
 
     % Compute the RMSE
-%    rmse_vett(ii) = rmse( [OTM_put_model_f; OTM_call_model_f], ...
-%     [OTM_put_market_f; OTM_call_market_f]);
+   rmse_vett(ii) = rmse( [OTM_put_model_f; OTM_call_model_f], ...
+    [OTM_put_market_f; OTM_call_market_f]);
 
-    rmse_vett(ii) = rmse( [OTM_put_model; OTM_call_model], ...
-        [OTM_put_market; OTM_call_market]);
+    % rmse_vett(ii) = rmse( [OTM_put_model; OTM_call_model], ...
+    %     [OTM_put_market; OTM_call_market]);
         
 end
 
 % Compute the total RMSE
-rmse_tot = sum(weights.*rmse_vett);
+% rmse_tot = sum(weights.*rmse_vett);
 
-% rmse_tot = sum(rmse_vett);
+rmse_tot = sum(rmse_vett);
 
 end
