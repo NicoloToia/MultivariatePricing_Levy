@@ -14,12 +14,12 @@ function [c, ceq] = constraint(x, alpha)
 % x(3) = theta
 
 % Inequality constraint
-
+% 
 c = [];
-
+% 
 % c = [ - (1-alpha) / (x(2)*x(1)^2) - x(3);
 %       - (1-alpha) / (x(5)*x(4)^2) - x(6) ];
-
+% 
 % Equality constraint
 ceq = x(1)^2/(x(3)^2*x(2)) - x(4)^2/(x(6)^2*x(5));
 

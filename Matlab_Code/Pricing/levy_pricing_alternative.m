@@ -78,40 +78,37 @@ if strcmp(flag, 'NIG')
     G_EU =  random('inverseGaussian', 1, ttm/nu_EU,[N_sim, 1]);
     G_Z = random('inverseGaussian', 1, ttm/nu_Z,[N_sim, 1]);
 
-    drift_compensator_YEU = - ttm/nu_EU * (1 - sqrt( 1 - 2 * nu_EU * Beta_EU - nu_EU * gamma_EU^2));
-    drift_compensator_YUS = - ttm/nu_US * (1 - sqrt( 1 - 2 * nu_US * Beta_US - nu_US * gamma_US^2));
-    drift_compensator_Z   = - ttm/nu_Z  * (1 - sqrt( 1 - 2 * nu_Z * Beta_Z - nu_Z * gamma_Z^2));
-
 elseif strcmp(flag, 'VG')
     % VG
     drift_compensator_US = 1/kappa_US * log(1 - theta_US * kappa_US - (sigma_US^2 * kappa_US)/2);
     drift_compensator_EU = 1/kappa_EU * log(1 - theta_EU * kappa_EU - (sigma_EU^2 * kappa_EU)/2);
+
+    drift_compensator_YEU = ttm/nu_EU * log(1 - nu_EU * Beta_EU - (nu_EU * gamma_EU^2)/2);
+    drift_compensator_YUS = ttm/nu_US * log(1 - nu_US * Beta_US - (nu_US * gamma_US^2)/2);
+    drift_compensator_Z   = ttm/nu_Z * log(1 - nu_Z * Beta_Z - (nu_Z * gamma_Z^2)/2);
 
     % draw the variance gamma random variables
     Y=zeros(N_sim,1);
     % Sample dS -> increments of a Gamma
     dS=nu_EU*icdf('gamma',rand(N_sim,1),ttm/nu_EU,1);
     % Sample the VG
-    Y(:,1)=Y(:,1)+1*dS+gamma_EU*sqrt(dS).*randn(N_sim,1);
+    Y(:,1)=Y(:,1)+drift_compensator_YEU*ttm+(1)*dS+gamma_EU*sqrt(dS).*randn(N_sim,1);
     G_EU = Y;
 
     X=zeros(N_sim,1);
     % Sample dS -> increments of a Gamma
     dS=nu_US*icdf('gamma',rand(N_sim,1),ttm/nu_US,1);
     % Sample the VG
-    X(:,1)=X(:,1)+1*dS+gamma_US*sqrt(dS).*randn(N_sim,1);
+    X(:,1)=X(:,1)+drift_compensator_YUS*ttm+(1)*dS+gamma_US*sqrt(dS).*randn(N_sim,1);
     G_US = X;
 
     W=zeros(N_sim,1);
     % Sample dS -> increments of a Gamma
     dS=nu_US*icdf('gamma',rand(N_sim,1),ttm/nu_US,1);
     % Sample the VG
-    W(:,1)=W(:,1)+1*dS+gamma_US*sqrt(dS).*randn(N_sim,1);
+    W(:,1)=W(:,1)+drift_compensator_Z*ttm+(1)*dS+gamma_US*sqrt(dS).*randn(N_sim,1);
     G_Z = W;
 
-    drift_compensator_YEU = ttm/nu_EU * log(1 - nu_EU * Beta_EU - (nu_EU * gamma_EU^2)/2);
-    drift_compensator_YUS = ttm/nu_US * log(1 - nu_US * Beta_US - (nu_US * gamma_US^2)/2);
-    drift_compensator_Z   = ttm/nu_Z * log(1 - nu_Z * Beta_Z - (nu_Z * gamma_Z^2)/2);
     
 else
     error('Flag not recognized');

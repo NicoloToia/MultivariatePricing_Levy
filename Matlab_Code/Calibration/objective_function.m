@@ -40,10 +40,10 @@ theta_US = p(6);
 %   compute_rmse ----------> compute_rmse_2
 
 % Compute the rmse for the EU Market
-rmseEU = compute_rmse(Market_EU, TTM_EU, sigma_EU, kappa_EU, theta_EU, alpha, M, dz, flag);
+rmseEU = compute_rmse_2(Market_EU, TTM_EU, sigma_EU, kappa_EU, theta_EU, alpha, M, dz, flag);
 
 % Compute the rmse for the US Market
-rmseUS = compute_rmse(Market_US, TTM_US, sigma_US, kappa_US, theta_US, alpha, M, dz, flag);
+rmseUS = compute_rmse_2(Market_US, TTM_US, sigma_US, kappa_US, theta_US, alpha, M, dz, flag);
 
 % Compute the objective function
 obj = w_EU * rmseEU + w_US * rmseUS;

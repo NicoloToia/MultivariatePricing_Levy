@@ -74,14 +74,14 @@ elseif strcmp(flag, 'VG')
     % Sample dS -> increments of a Gamma
     dS=kappa_EU*icdf('gamma',rand(N_sim,1),ttm/kappa_EU,1);
     % Sample the VG
-    Y(:,1)=Y(:,1)+1*dS+sigma_EU*sqrt(dS).*randn(N_sim,1);
+    Y(:,1)=Y(:,1)+compensatorEU_VG*ttm+(1+theta_EU)*dS+sigma_EU*sqrt(dS).*randn(N_sim,1);
     G_EU = Y;
 
     X=zeros(N_sim,1);
     % Sample dS -> increments of a Gamma
     dS=kappa_US*icdf('gamma',rand(N_sim,1),ttm/kappa_US,1);
     % Sample the VG
-    X(:,1)=X(:,1)+1*dS+sigma_US*sqrt(dS).*randn(N_sim,1);
+    X(:,1)=X(:,1)+compensatorUS_VG*ttm+(1+theta_US)*dS+sigma_US*sqrt(dS).*randn(N_sim,1);
     G_US = X;
 
 

@@ -28,6 +28,7 @@ addpath('Filter');
 addpath('Calibration');
 addpath('Model_Check');
 addpath('Pricing')
+addpath('Plot_3D')
 
 %% IMPORT DATA
 
@@ -200,7 +201,7 @@ close all;
 % plot3d_impl_vol_new(Market_US_filtered)
 
 
-%% CALIBRATION
+    %% CALIBRATION
 
 % Define the weight of both markets (EU and US)
 w_EU = spot_EU/(spot_EU + spot_US);
@@ -218,7 +219,7 @@ dz_fft = 0.0025;
 % kappa_US = p(5)
 % theta_US = p(6)
 
-flag = 'VG';
+flag = 'NIG';
 
 if strcmp(flag, 'NIG')
     alpha = 0.5;
@@ -249,40 +250,39 @@ b = [
 % Initial guess
 
 
+% p1 = [0.1 0.1 -0.1 0.1 0.1 -0.1];%1
+
+% p2 = [0.13 0.1 -0.1 0.13 0.1 -0.1];%3
+
+% p3 = 0.5*ones(1,6);%4
+
+% p4 = [0.20 0.01 -0.5 0.20 0.01 -0.5]; %5 buono rmse2
+
+% % build a matrix with initial conditions
+% P = [p1; p2; p3; p4];
+
 p0 = [0.1 0.1 -0.1 0.1 0.1 -0.1];%1
-
-% p0 = [0.15 0.3 -0.5 0.15 0.3 -0.5];%2
-
-p0 = [0.13 0.1 -0.1 0.13 0.1 -0.1];%3
-
-p0 = 0.5*ones(6,1);%4
-
-% p0 = [0.20 0.01 -1 0.20 0.01 -1]; %5 buono rmse2
 
 % Non linear constraints    
 const = @(x) constraint(x, alpha);
-% lower bound
+% lower bound & upper bound
 lb = [0 0 -inf 0 0 -inf];
-% ub = [inf 1 inf inf 1 inf];
-% lb = [];
 ub = [];
 
 % options
 % options = optimset('Display', 'iter');
-% options = optimoptions('fmincon',...
-%     'OptimalityTolerance', 1e-7, ...
-%     'TolFun', 1e-5, ...
-%     'ConstraintTolerance', 1e-5,...
-%     'Display', 'iter');
-options = optimset('MaxFunEvals', 3e3, 'Display', 'iter');
+options = optimoptions('fmincon',...
+    'OptimalityTolerance', 1e-7, ...
+    'TolFun', 1e-5, ...
+    'ConstraintTolerance', 1e-5,...
+    'Display', 'iter');
+% options = optimset('MaxFunEvals', 3e3, 'Display', 'iter');
 
 
 % Optimization
 calibrated_param = fmincon(obj_fun, p0, A, b, [], [], lb, ub, const, options);
 
-% Loro phi
-% calibrated_param = [0.124591312025052 0.825923977978176 -0.162083449192270 0.155780648904408 3.82951110965306128 -0.094115856301092];
-
+%%
 % print the results
 disp('---------------------------------------------------------------------')
 disp('The optimal parameters are:');
@@ -347,26 +347,28 @@ A = [-1 0 0;
       0 -1 0; 
       0 0 -1]; 
 b = [0; 0; 0];
-Aeq = []; 
-beq = [];
+
 lb = [0 0 max(kappa_US, kappa_EU)]; 
 ub = [];
-% lb = zeros(3,1);
-% lb = [0 0 3];
 
 constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU, corrHist);
-% options
-% options = optimoptions('fmincon', 'Display', 'off');
-% options = optimset('MaxFunEvals', 3e3, 'ConstraintTolerance', 10^-4, 'Display', 'iter');
-% options = optimoptions('fmincon',...
-%     'OptimalityTolerance', 1e-6, ...
-%     'TolFun', 1e-4, ...
-%     'ConstraintTolerance', 1e-3,...
-%     'Display', 'ITER');
-options = optimset('MaxFunEvals', 3e3, 'Display', 'iter');
+
+options = optimoptions('fmincon', ...
+    'Algorithm', 'sqp', ...
+    'OptimalityTolerance', 1e-8, ...
+    'ConstraintTolerance', 1e-6, ...      % Increase this value to relax the constraint tolerance
+    'StepTolerance', 1e-10, ...           % Decrease this value to allow smaller steps
+    'MaxIterations', 10000, ...            % Increase this value to allow more iterations
+    'MaxFunctionEvaluations', 3e4, ...  % Increase this value to allow more function evaluations
+    'Display', 'iter');                   % Display iteration information
+
+% options = optimset('MaxFunEvals', 3e3, 'Display', 'iter');
+
+X0 = 0.5*ones(1,3);
+% X0 = [4 0.1 4];
 
 % calibration of the parameters
-nu_calibrated = fmincon(obFun, 0.5*ones(1,3), A, b, Aeq, beq, lb, ub, constNU, options);
+nu_calibrated = fmincon(obFun, X0, A, b, [], [], lb, ub, constNU, options);
 
 nu_US = nu_calibrated(1);
 nu_EU = nu_calibrated(2);
@@ -374,30 +376,64 @@ nu_Z = nu_calibrated(3);
 
 % prnt the results
 disp('---------------------------------------------------------------------')
-disp(['nu_EU = ', num2str(nu_EU)]);
 disp(['nu_US = ', num2str(nu_US)]);
+disp(['nu_EU = ', num2str(nu_EU)]);
 disp(['nu_Z = ', num2str(nu_Z)]);
 disp('---------------------------------------------------------------------')
+
+rho = sqrt(kappa_EU*kappa_US)/nu_Z;
+disp(rho)
+rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
+disp(rho)
+
 
 %%
-% Compute the calibrated parameter nu_z using an alternative method
-% nu_Z = sqrt(kappa_EU*kappa_US)/corrHist;
-% nu_Z = 6.985087;
+% % Define the historical correlation
+% corrHist = corr(Returns.Annually(:,2), Returns.Annually(:,1));
+% 
+% % Define the objective function
+% obFun = @(nu) ( sqrt( nu(1)*nu(2) / ((nu(1) + nu(3)) * (nu(2) + nu(3)))) - corrHist )^2;
+% 
+% % Define the constraints (if any)
+% constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU, corrHist);
+% 
+% % Set the bounds
+% lb = [0 0 max(kappa_US, kappa_EU)];
+% ub = [];
+% 
+% % Set GA options
+% options = optimoptions('ga', ...
+%     'PopulationSize', 100, ...       % Size of the population
+%     'MaxGenerations', 200, ...       % Maximum number of generations
+%     'MaxStallGenerations', 50, ...   % Maximum number of stall generations
+%     'FunctionTolerance', 1e-6, ...   % Function tolerance
+%     'Display', 'iter', ...           % Display iteration information
+%     'PlotFcn', @customGaplotbestf);  % Custom plot function
+% 
+% % Number of variables
+% nvars = 3;
+% 
+% % Run the GA
+% [nu_calibrated, fval] = ga(obFun, nvars, [], [], [], [], lb, ub, constNU, options);
+% 
+% % Extract the calibrated parameters
+% nu_US = nu_calibrated(1);
+% nu_EU = nu_calibrated(2);
+% nu_Z = nu_calibrated(3);
+% 
+% % Print the results
+% disp('---------------------------------------------------------------------')
+% disp(['nu_US = ', num2str(nu_US)]);
+% disp(['nu_EU = ', num2str(nu_EU)]);
+% disp(['nu_Z = ', num2str(nu_Z)]);
+% disp('---------------------------------------------------------------------')
+% 
+% % Calculate and display the correlation
+% rho = sqrt(kappa_EU * kappa_US) / nu_Z;
+% disp(rho)
+% rho = sqrt(nu_US * nu_EU / ((nu_EU + nu_Z) * (nu_US + nu_Z)));
+% disp(rho)
 
-% nu2 = fzero(funNU2, 0.1);
-nu_EU = (kappa_EU*nu_Z)/(nu_Z - kappa_EU);
-nu_US = (kappa_US*nu_Z)/(nu_Z - kappa_US);
-
-% prnt the results
-disp('---------------------------------------------------------------------')
-disp(['nu_EU = ', num2str(nu_EU)]);
-disp(['nu_US = ', num2str(nu_US)]);
-disp(['nu_Z = ', num2str(nu_Z)]);
-disp('---------------------------------------------------------------------')
-
-% check
-rho = sqrt(kappa_EU*kappa_US)/nu_Z;
-rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
 
 %% COMPUTE IDIOSYNCRATIC & SYSTEMIC PARAMETERS
 
@@ -513,12 +549,14 @@ disp(['The average percentage error for the US market (Implied Volatility) is: '
 % plot3D_impVol(Market_EU_calibrated);
 % legend('MKT','MOD');
 % hold off;
+% %%
+% % plot the US implied volatilities
 % figure;
 % % MKT
-% plot3D_impVol(Market_EU_filtered);
+% plot3D_impVol(Market_US_filtered);
 % hold on;
 % % MOD
-% plot3D_impVol(Market_EU_calibrated);
+% plot3D_impVol(Market_US_calibrated);
 % legend('MKT','MOD');
 % hold off;
 
@@ -530,10 +568,12 @@ disp(['The average percentage error for the US market (Implied Volatility) is: '
 % Compute the historical correlation between the two markets with the yearly returns
 HistCorr = corr(Returns.Annually(:,2), Returns.Annually(:,1));
 
-% Print the results
-disp('---------------------------------------------------------------------')
-disp(['The historical correlation between the two indexes is: ', num2str(HistCorr)]);
-disp('---------------------------------------------------------------------')
+% Display the results in a table format
+T = table(corrHist, 'VariableNames', {'Historical_Correlation'});
+disp('---------------------------------------------------------------------');
+disp(T);
+disp('---------------------------------------------------------------------');
+
 
 %% NEW STRUCT FOR MARKET MODEL (BLACK)
 
@@ -643,8 +683,8 @@ N_sim = 1e7;
 
 %%
 % Compute the price of the derivative using the Lévy model
-[price_levy, CI_levy] = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
-                                    alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, HistCorr, N_sim, flag);
+% [price_levy, CI_levy] = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
+%                                     alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, HistCorr, N_sim, flag);
 %%
 % rho = sqrt(kappa_EU*kappa_US)/nu_Z;
 rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
@@ -659,9 +699,6 @@ rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
 % price via the semi closed formula
 price_closed_formula = closedFormula(Market_US_Black, Market_EU_Black, settlement, targetDate, HistCorr);
 
-%%
-% price via the semi closed formula
-% price_closed_formula = closedFormula(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, HistCorr);
 %%
 % alternative
 
@@ -701,5 +738,15 @@ for i = 1:length(method_names)
 end
 
 %%
-% End elapse time 
-toc
+
+% End elapsed time and store the result
+elapsedTime = toc;
+
+% Calculate minutes and seconds
+minutes = floor(elapsedTime / 60);
+seconds = mod(elapsedTime, 60);
+
+% Display the elapsed time in a nice format
+disp('---------------------------------------------------------------------');
+fprintf('Elapsed time: %d minutes and %.2f seconds\n', minutes, seconds);
+disp('---------------------------------------------------------------------');

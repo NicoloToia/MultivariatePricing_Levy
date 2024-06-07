@@ -44,7 +44,7 @@ weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
 % weights = (weights' / sum(weights));
 
 % Cycle over expiries
-for ii = 1:min(length(TTM),19)
+for ii = 1:min(length(TTM),20)
 
     % Import data from the Market struct
     F0 = Market.F0(ii).value;
@@ -93,9 +93,9 @@ for ii = 1:min(length(TTM),19)
     % w = [pes_call;pes_put];
     % % ******************************************************************
 
-    % % Compute the RMSE
+    % Compute the RMSE
 
-    % % uncomment to use the volumes weights
+    % uncomment to use the volumes weights
     % rmse_vett(ii) = rmse( [OTM_call_model; OTM_put_model], ...
     %    [OTM_call_market; OTM_put_market], W = w );
 

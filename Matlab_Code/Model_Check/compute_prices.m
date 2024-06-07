@@ -8,7 +8,7 @@ function Market = compute_prices(Market, TTM, M_fft, dz_fft, alpha, flag)
 % M_fft: 2^M_fft is the number of points for the FFT
 % dz_fft: grid spacing for the FFT
 % alpha: parameter for the FFT
-% flag: 'FFT' or 'quad' for the method to compute the prices
+% flag: NIG or VG
 %
 % OUTPUTS
 % Market: struct with the prices of the options
