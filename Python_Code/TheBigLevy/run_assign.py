@@ -13,9 +13,12 @@ import numpy as np
 from datetime import datetime
 import scipy.io
 import matplotlib.pyplot as plt
+from scipy.optimize import minimize, LinearConstraint, NonlinearConstraint
+
 from generals import OptionMarketData, fwd_Bbar, yearfrac_act_365
 from generals import compute_ImpVol, select_OTM
 from generals import sens_Delta, Filter
+from calibration import objective_function, constraint
 
 #%% ---- FIX THE SEED
 np.random.seed(42)  # the answer to everything
@@ -135,23 +138,110 @@ rates_US = -np.log(discounts_US) / TTM_US
 # Compute the implied volatilities for the EU market
 Market_EU = compute_ImpVol(Market_EU, TTM_EU, rates_EU)
 # Compute the implied volatilities for the US market
-#Market_US = compute_ImpVol(Market_US, TTM_US, rates_US)
+Market_US = compute_ImpVol(Market_US, TTM_US, rates_US)
 
 # Select the OTM implied volatilities for the EU market
 Market_EU = select_OTM(Market_EU)
 
 # Select the OTM implied volatilities for the US market
-# Market_US = select_OTM(Market_US)
+Market_US = select_OTM(Market_US)
 
 #%% ---- FILTERING
 
 # Compute the delta sensitivity for the EU market
 Market_EU = sens_Delta(Market_EU, TTM_EU, rates_EU)
 # Compute the delta sensitivity for the US market
-# Market_US = sens_Delta(Market_US, TTM_US, rates_US)
+Market_US = sens_Delta(Market_US, TTM_US, rates_US)
 
 # Create a new struct for the EU market with the filtered options
 Market_EU_filtered = Filter(Market_EU)
 
 # Create a new struct for the US market with the filtered options
-# Market_US_filtered = Filter(Market_US)
+Market_US_filtered = Filter(Market_US)
+
+
+#%% ---- CALIBRATION
+
+# Define the weight of both markets (EU and US)
+w_EU = spot_EU / (spot_EU + spot_US)
+w_US = spot_US / (spot_EU + spot_US)
+
+# Set the Fast Fourier Transform (FFT) parameters
+M_fft = 15
+dz_fft = 0.0025
+
+# Calibrate the NIG parameters for the two markets (EU and US)
+# sigma_EU = p[0]
+# kappa_EU = p[1]
+# theta_EU = p[2]
+# sigma_US = p[3]
+# kappa_US = p[4]
+# theta_US = p[5]
+
+# Fix the flag to use NIG model
+flag = 'NIG'
+
+# Define the objective function
+def obj_fun(p):
+    return objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU_filtered, Market_US_filtered, M_fft, dz_fft, flag)
+
+# Linear constraints
+A = np.array([
+    [-1, 0, 0, 0, 0, 0],
+    [0, -1, 0, 0, 0, 0],
+    [0, 0, 0, -1, 0, 0],
+    [0, 0, 0, 0, -1, 0],
+])
+
+b = np.array([0, 0, 0, 0])
+
+# Initial guess
+p0 = 0.3 * np.ones(6)
+
+# Nonlinear constraints
+def const(x):
+    return constraint(x, alpha=0.5)
+
+# Lower and upper bounds
+lb = [0, 0, -np.inf, 0, 0, -np.inf]
+ub = []
+
+# Options
+options = {
+    'disp': True,
+    'ftol': 1e-5,
+    'gtol': 1e-7,
+    'xtol': 1e-5,
+}
+
+# Linear and nonlinear constraints setup
+lin_constraints = LinearConstraint(A, -np.inf, b)
+nonlin_constraints = NonlinearConstraint(const, -np.inf, np.inf)
+
+# Optimization
+result = minimize(obj_fun, p0, bounds=(lb, ub), constraints=[lin_constraints, nonlin_constraints], options=options)
+calibrated_param = result.x
+
+
+# Print the results
+print('---------------------------------------------------------------------')
+print('The optimal parameters are:')
+print(f'sigma_EU = {calibrated_param[0]}')
+print(f'kappa_EU = {calibrated_param[1]}')
+print(f'theta_EU = {calibrated_param[2]}')
+print(f'sigma_US = {calibrated_param[3]}')
+print(f'kappa_US = {calibrated_param[4]}')
+print(f'theta_US = {calibrated_param[5]}')
+print('---------------------------------------------------------------------')
+
+# Rename the calibrated parameters for the EU market
+sigma_EU = calibrated_param[0]
+kappa_EU = calibrated_param[1]
+theta_EU = calibrated_param[2]
+
+# Rename the calibrated parameters for the US market
+sigma_US = calibrated_param[3]
+kappa_US = calibrated_param[4]
+theta_US = calibrated_param[5]
+
+
