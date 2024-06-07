@@ -16,10 +16,17 @@ function obj = objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU, Mark
 % M: N = 2^M is the number of points in the grid
 % dz: grid spacing
 % alpha: Model selection parameter (NIG --> alpha = 0.5)
-%                                  (VG  --> alpha ~ 0)
+% flag: model selection NIG or VG
 %
 % OUTPUTS
 % obj: objective function
+
+% USES: This function incorporates different methodologies for computing the RMSE (Root Mean Square Error). 
+%               As a first step, it is possible to use two different functions:
+%            -> compute_rmse: This function implements a simple calculation of the RMSE,
+%                                    with or without weight adjustments.
+%            -> compute_rmse_2: This function calculates the RMSE by checking the bid-ask spread. 
+%                                   Only prices that are outside this interval are used to compute the error.
 
 % Call the parameters
 sigma_EU = p(1);
@@ -28,6 +35,9 @@ theta_EU = p(3);
 sigma_US = p(4);
 kappa_US = p(5);
 theta_US = p(6);
+
+% To use compute_rmse_2 where only errors outside the bid-ask spred, change the function below from
+%   compute_rmse ----------> compute_rmse_2
 
 % Compute the rmse for the EU Market
 rmseEU = compute_rmse(Market_EU, TTM_EU, sigma_EU, kappa_EU, theta_EU, alpha, M, dz, flag);
