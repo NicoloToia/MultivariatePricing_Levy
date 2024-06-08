@@ -74,14 +74,23 @@ if strcmp(flag, 'NIG')
     G_EU =  random('inverseGaussian', 1, ttm/nu_EU,[N_sim, 1]);
     G_Z = random('inverseGaussian', 1, ttm/nu_Z,[N_sim, 1]);
 
+    % draw the standard normal random variables
+    g = randn(N_sim, 3);
+
+    % Idyosyncratic processes
+    Y_US =   - gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
+    Y_EU =  - gamma_EU^2 * (0.5 + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
+    % Systematic process
+    Z =  - gamma_Z^2 * ( 0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
+
 elseif strcmp(flag, 'VG')
     % VG
     drift_compensator_US = 1/kappa_US * log(1 - theta_US * kappa_US - (sigma_US^2 * kappa_US)/2);
     drift_compensator_EU = 1/kappa_EU * log(1 - theta_EU * kappa_EU - (sigma_EU^2 * kappa_EU)/2);
 
-    drift_compensator_YEU = ttm/nu_EU * log(1 - nu_EU * Beta_EU - (nu_EU * gamma_EU^2)/2);
-    drift_compensator_YUS = ttm/nu_US * log(1 - nu_US * Beta_US - (nu_US * gamma_US^2)/2);
-    drift_compensator_Z   = ttm/nu_Z * log(1 - nu_Z * Beta_Z - (nu_Z * gamma_Z^2)/2);
+    drift_compensator_YEU = 1/nu_EU * log(1 - nu_EU * Beta_EU - (nu_EU * gamma_EU^2)/2);
+    drift_compensator_YUS = 1/nu_US * log(1 - nu_US * Beta_US - (nu_US * gamma_US^2)/2);
+    drift_compensator_Z   = 1/nu_Z * log(1 - nu_Z * Beta_Z - (nu_Z * gamma_Z^2)/2);
 
     % draw the variance gamma random variables
     Y=zeros(N_sim,1);
@@ -105,21 +114,20 @@ elseif strcmp(flag, 'VG')
     W(:,1)=W(:,1)+drift_compensator_Z*ttm+(1)*dS+gamma_US*sqrt(dS).*randn(N_sim,1);
     G_Z = W;
 
+        % draw the standard normal random variables
+    g = randn(N_sim, 3);
+
+    % Idyosyncratic processes
+    Y_US =   real(- gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1));
+    Y_EU =  real(- gamma_EU^2 * (0.5 + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2));
+    % Systematic process
+    Z =  real(- gamma_Z^2 * ( 0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3));
 else
     error('Flag not recognized');
 end
 
-% draw the standard normal random variables
-g = randn(N_sim, 3);
-
-% Idyosyncratic processes
-Y_US =   - gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
-Y_EU =  - gamma_EU^2 * (0.5 + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
-% Systematic process
-Z =  - gamma_Z^2 * ( 0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
-
 % Marginal processes
-X_US = Y_US + a_US * Z;
+X_US = real(Y_US + a_US * Z);
 X_EU = Y_EU + a_EU * Z;
 
 % Compute the forward prices
