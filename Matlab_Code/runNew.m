@@ -625,6 +625,7 @@ HistCorr = corr(Returns.Annually(:,2), Returns.Annually(:,1));
 % Print the results
 disp(' ');
 disp(['The historical correlation between the EURO STOXX 50 and the S&P 500 is: ', num2str(HistCorr)]);
+disp(' ');
 disp('---------------------------------------------------------------------');
 
 %% NEW STRUCT FOR MARKET MODEL (BLACK)
@@ -701,6 +702,7 @@ end
 % print the results
 disp(' ');
 disp('Black Model Calibration Errors Check:')
+disp(' ');
 disp(['The average percentage error for the EU market (Black Model) is: ', num2str(percentage_error_EU_Black), '%']);
 disp(['The average percentage error for the US market (Black Model) is: ', num2str(percentage_error_US_Black), '%']);
 disp('---------------------------------------------------------------------');
@@ -784,11 +786,13 @@ end
 disp(' ');
 disp('The prices of the derivative and their confidence intervals are:')
 disp(' ');
-disp('Method                | Price       | Confidence Interval');
+disp('Method               | Price       | Confidence Interval');
 disp('---------------------------------------------------------');
 for i = 1:length(method_names)
     fprintf('%-20s | %.4f     | %s\n', results{i, 1}, results{i, 2}, results{i, 3});
 end
+
+disp(' ');
 
 %%
 
