@@ -409,4 +409,7 @@ print("---------------------------------------------------------------------")
 
 #%% ---- PRICING USING SEMI-CLOSED FORMULA
 
-price_closed_formula = closedFormula(Market_US_black, Market_EU_black, settlement, target_date, hist_corr, N_sim)
+price_closed_formula = closedFormula(Market_US_black, Market_EU_black, settlement, target_date, hist_corr)
+print("---------------------------------------------------------------------")
+print(f"Price using Black model: {price_closed_formula}")
+print("---------------------------------------------------------------------")
