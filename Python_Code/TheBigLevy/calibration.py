@@ -3,6 +3,25 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 
+class Calibrated_OptionMarketData:
+    def __init__(self, datesExpiry, strikes, spot, B_bar, F0, sigma, kappa, theta):
+        self.datesExpiry = datesExpiry
+        self.strikes = strikes
+        self.spot = spot
+        self.B_bar = B_bar
+        self.F0 = F0
+        self.sigma = sigma
+        self.kappa = kappa
+        self.theta = theta
+
+
+    def __repr__(self):
+        return (f"OptionMarketData(datesExpiry={len(self.datesExpiry)}, strikes={len(self.strikes)},"
+                f"spot={len(self.spot)}, B_bar={len(self.B_bar)}, F0={len(self.F0)},"
+                f"sigma={len(self.sigma)}, kappa={len(self.kappa)}, theta={len(self.theta)}"
+                )
+
+
 # Functions to compute integral (using FFT)
 def callIntegral(B0, F0, sigma, kappa, eta, t, log_moneyness, M, dz, flag):
     """
@@ -141,7 +160,7 @@ def compute_rmse(Market, TTM, sigma, kappa, theta, M, dz, flag):
         # Extract the model prices for calls and puts
         # Find indexes
         OTM_put_index = np.sum(strikes <= F0)
-        OTM_call_index = OTM_put_index + 1
+        OTM_call_index = OTM_put_index +1
 
         # Call prices for OTM options
         OTM_call_model = callPrices[OTM_call_index:]
@@ -228,10 +247,12 @@ def constraint(x, alpha):
     """
 
     # Inequality constraint
-    c = [
-        - (1 - alpha) / (x[1] * x[0] ** 2) - x[2],  # sigma_EU, kappa_EU, theta_EU
-        - (1 - alpha) / (x[4] * x[3] ** 2) - x[5]   # sigma_US, kappa_US, theta_US
-    ]
+    # c = [
+    #     - (1 - alpha) / (x[1] * x[0] ** 2) - x[2],  # sigma_EU, kappa_EU, theta_EU
+    #     - (1 - alpha) / (x[4] * x[3] ** 2) - x[5]   # sigma_US, kappa_US, theta_US
+    # ]
+
+    c = []
 
     # Equality constraint
     ceq = x[0] ** 2 / (x[2] ** 2 * x[1]) - x[3] ** 2 / (x[5] ** 2 * x[4])

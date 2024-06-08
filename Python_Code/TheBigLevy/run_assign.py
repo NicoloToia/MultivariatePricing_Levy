@@ -13,12 +13,17 @@ import numpy as np
 from datetime import datetime
 import scipy.io
 import matplotlib.pyplot as plt
+import pandas as pd
+from pandas.tseries.offsets import BusinessDay
 from scipy.optimize import minimize, LinearConstraint, NonlinearConstraint
 
 from generals import OptionMarketData, fwd_Bbar, yearfrac_act_365
 from generals import compute_ImpVol, select_OTM
 from generals import sens_Delta, Filter
 from calibration import objective_function, constraint
+from calibration import Calibrated_OptionMarketData
+from calibration_black import Black_OptionMarketData, black_obj
+from pricing import black_pricing, closedFormula
 
 #%% ---- FIX THE SEED
 np.random.seed(42)  # the answer to everything
@@ -146,6 +151,7 @@ Market_EU = select_OTM(Market_EU)
 # Select the OTM implied volatilities for the US market
 Market_US = select_OTM(Market_US)
 
+
 #%% ---- FILTERING
 
 # Compute the delta sensitivity for the EU market
@@ -185,42 +191,57 @@ flag = 'NIG'
 def obj_fun(p):
     return objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU_filtered, Market_US_filtered, M_fft, dz_fft, flag)
 
-# Linear constraints
+# Linear costraints
 A = np.array([
     [-1, 0, 0, 0, 0, 0],
     [0, -1, 0, 0, 0, 0],
     [0, 0, 0, -1, 0, 0],
     [0, 0, 0, 0, -1, 0],
 ])
+lb_ineq = -np.inf * np.ones(4)
+ub_ineq = np.zeros(4)  # Right-hand side of the inequality
 
-b = np.array([0, 0, 0, 0])
+linear_constraint = LinearConstraint(A, lb_ineq, ub_ineq)
+
 
 # Initial guess
-p0 = 0.3 * np.ones(6)
+p0 = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
 # Nonlinear constraints
-def const(x):
-    return constraint(x, alpha=0.5)
+def constraint_ineq(x):
+    c, _ = constraint(x, 0.5)
+    return c
 
-# Lower and upper bounds
-lb = [0, 0, -np.inf, 0, 0, -np.inf]
-ub = []
+def constraint_eq(x):
+    _, ceq = constraint(x, 0.5)
+    return ceq
+
+nonlinear_constraints = [
+    {'type': 'ineq', 'fun': constraint_ineq},
+    {'type': 'eq', 'fun': constraint_eq}
+]
+
+
+# Define the bounds
+bounds = [(0, None),  # x1 >= 0
+          (0, None),  # x2 >= 0
+          (None, None),  # x3 non limitato
+          (0, None),  # x4 >= 0
+          (0, None),  # x5 >= 0
+          (None, None)]  # x6 non limitato
 
 # Options
 options = {
     'disp': True,
-    'ftol': 1e-5,
-    'gtol': 1e-7,
-    'xtol': 1e-5,
 }
 
-# Linear and nonlinear constraints setup
-lin_constraints = LinearConstraint(A, -np.inf, b)
-nonlin_constraints = NonlinearConstraint(const, -np.inf, np.inf)
 
 # Optimization
-result = minimize(obj_fun, p0, bounds=(lb, ub), constraints=[lin_constraints, nonlin_constraints], options=options)
-calibrated_param = result.x
+# result = minimize(obj_fun, p0, bounds=bounds, constraints=[linear_constraint] + nonlinear_constraints, options=options)
+# calibrated_param = result.x
+
+calibrated_param = [0.12519, 0.85192, -0.16004, 0.15624, 3.87596, -0.09363]
+
 
 
 # Print the results
@@ -245,3 +266,147 @@ kappa_US = calibrated_param[4]
 theta_US = calibrated_param[5]
 
 
+#%% ---- NEW STRUCT FOR MARKET MODEL
+
+# For EU Market
+Market_EU_calibrated = Calibrated_OptionMarketData(
+    datesExpiry=Market_EU_filtered.datesExpiry,
+    strikes=Market_EU_filtered.strikes,
+    spot=Market_EU_filtered.spot,
+    B_bar=Market_EU_filtered.B_bar,
+    F0=Market_EU_filtered.F0,
+    sigma=sigma_EU,
+    kappa=kappa_EU,
+    theta=theta_EU
+)
+
+# For US Market
+Market_US_calibrated = Calibrated_OptionMarketData(
+    datesExpiry=Market_US_filtered.datesExpiry,
+    strikes=Market_US_filtered.strikes,
+    spot=Market_US_filtered.spot,
+    B_bar=Market_US_filtered.B_bar,
+    F0=Market_US_filtered.F0,
+    sigma=sigma_US,
+    kappa=kappa_US,
+    theta=theta_US
+)
+
+#%% ---- COMPUTE nu_Z USING CLOSE FORMULAS
+
+rho = 0.2516
+nu_Z = np.sqrt(kappa_EU*kappa_US)/rho #*************************************************************************
+nu_EU = (kappa_EU * nu_Z) / (nu_Z - kappa_EU)
+nu_US = (kappa_US * nu_Z) / (nu_Z - kappa_US)
+
+# Stampa i risultati
+print('---------------------------------------------------------------------')
+print(f'nu_EU = {nu_EU}')
+print(f'nu_US = {nu_US}')
+print(f'nu_Z = {nu_Z}')
+print('---------------------------------------------------------------------')
+
+#%% ---- COMPUTE HISTORICAL CORRELATION
+
+returns_annually = returns['Returns'][0, 0]['Annually']
+
+# Compute historical correlation
+correlation_matrix = np.corrcoef(returns_annually.T)
+hist_corr = correlation_matrix[0, 1]
+
+#%% ---- NEW STRUCT FOR MARKET MODEL (BLACK)
+# EU Market
+Market_EU_black = Black_OptionMarketData(
+    datesExpiry=Market_EU_filtered.datesExpiry,
+    strikes=Market_EU_filtered.strikes,
+    spot=Market_EU_filtered.spot,
+    B_bar=Market_EU_filtered.B_bar,
+    F0=Market_EU_filtered.F0
+)
+
+# US Market
+Market_US_black = Black_OptionMarketData(
+    datesExpiry=Market_US_filtered.datesExpiry,
+    strikes=Market_US_filtered.strikes,
+    spot=Market_US_filtered.spot,
+    B_bar=Market_US_filtered.B_bar,
+    F0=Market_US_filtered.F0
+)
+
+#%% ---- BLACK CALIBRATION
+
+# # Define the objective function for the Black model
+# # EU market
+# def EU_black_obj(sigma):
+#     return black_obj(Market_EU_filtered, TTM_EU, sigma)
+#
+# # US market
+# def US_black_obj(sigma):
+#     return black_obj(Market_US_filtered, TTM_US, sigma)
+#
+#
+# # Options for the optimizer
+# options = {
+#     'disp': False  # Equivalent to 'Display', 'off' in MATLAB
+# }
+#
+# # Initial guess for sigma
+# initial_guess = 0.001
+#
+# # Constraints: sigma > 0
+# bounds = [(0, None)]
+#
+# # Calibrate the Black model for the two markets
+#
+# # EU market
+# result_EU = minimize(EU_black_obj, initial_guess, bounds=bounds, options=options)
+# sigmaB_EU = result_EU.x[0]
+#
+# # US market
+# result_US = minimize(US_black_obj, initial_guess, bounds=bounds, options=options)
+# sigmaB_US = result_US.x[0]
+
+sigmaB_EU = 0.15688
+sigmaB_US = 0.16405
+
+# Print the results
+print('---------------------------------------------------------------------')
+print('The calibrated parameters are:')
+print(f'sigmaB_EU = {sigmaB_EU}')
+print(f'sigmaB_US = {sigmaB_US}')
+print('---------------------------------------------------------------------')
+
+# Add volatilities to the struct
+Market_EU_black.sigma = sigmaB_EU
+Market_US_black.sigma = sigmaB_US
+
+#%% ---- PRICING: BLACK MODEL
+
+target_date = settlement + pd.DateOffset(years=1)
+
+# Function to check if a date is a business day
+def is_business_day(date):
+    return np.is_busday(date.strftime('%Y-%m-%d'))
+
+# Adjust target date to next business day if it's not a business day
+if not is_business_day(target_date):
+    target_date = target_date + BusinessDay()
+
+# Intialize the mean of the Brownian motions
+MeanBMs = np.array([0, 0])
+
+# Number of simulations
+N_sim = int(1e7)
+
+# Compute the price of the derivative using the Black model
+price_black, CI_black = black_pricing(Market_US_black, Market_EU_black, settlement, target_date, MeanBMs, hist_corr, N_sim)
+
+# Print the results
+print("---------------------------------------------------------------------")
+print(f"Price using Black model: {price_black}")
+print(f"Confidence interval: {CI_black}")
+print("---------------------------------------------------------------------")
+
+#%% ---- PRICING USING SEMI-CLOSED FORMULA
+
+price_closed_formula = closedFormula(Market_US_black, Market_EU_black, settlement, target_date, hist_corr, N_sim)
