@@ -308,7 +308,6 @@ b = [
 
 % Initial guess
 p0 = [0.1 0.1 -0.1 0.1 0.1 -0.1];%1
-
 % p0 = 0.2*rand(1, 6);
 
 % Non linear constraints    
@@ -793,8 +792,6 @@ for i = 1:length(method_names)
 end
 
 disp(' ');
-
-%%
 
 % End elapsed time and store the result
 elapsedTime = toc;
