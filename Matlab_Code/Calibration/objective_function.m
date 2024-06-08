@@ -1,4 +1,4 @@
-function obj = objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU, Market_US, M, dz, alpha, flag)
+function obj = objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU, Market_US, M, dz, flag, flag_rmse)
 % This function computes the objective function for the calibration of the
 % model parameters. The objective function is the sum of the root mean
 % squared errors (RMSE) between the model and the market prices for each
@@ -15,18 +15,18 @@ function obj = objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU, Mark
 % Filtered_US_Market: structure containing the S&P500 market data
 % M: N = 2^M is the number of points in the grid
 % dz: grid spacing
-% alpha: Model selection parameter (NIG --> alpha = 0.5)
 % flag: model selection NIG or VG
+% flag_rmse: RMSE or RMSE2
 %
 % OUTPUTS
 % obj: objective function
 
-% USES: This function incorporates different methodologies for computing the RMSE (Root Mean Square Error). 
+%This function incorporates different methodologies for computing the RMSE (Root Mean Square Error). 
 %               As a first step, it is possible to use two different functions:
-%            -> compute_rmse: This function implements a simple calculation of the RMSE,
-%                                    with or without weight adjustments.
-%            -> compute_rmse_2: This function calculates the RMSE by checking the bid-ask spread. 
-%                                   Only prices that are outside this interval are used to compute the error.
+%      RMSE      -> compute_rmse    : This function implements a simple calculation of the RMSE,
+%                                       with or without weight adjustments.
+%      RMSE2     -> compute_rmse_2  : This function calculates the RMSE by checking the bid-ask spread. 
+%                                       Only prices that are outside this interval are used to compute the error.
 
 % Call the parameters
 sigma_EU = p(1);
@@ -38,13 +38,21 @@ theta_US = p(6);
 
 % To use compute_rmse_2 where only errors outside the bid-ask spred, change the function below from
 %   compute_rmse ----------> compute_rmse_2
+if strcmp(flag_rmse, 'RMSE')
+    % Compute the rmse for the EU Market
+    rmseEU = compute_rmse(Market_EU, TTM_EU, sigma_EU, kappa_EU, theta_EU, M, dz, flag);
 
-% Compute the rmse for the EU Market
-rmseEU = compute_rmse_2(Market_EU, TTM_EU, sigma_EU, kappa_EU, theta_EU, alpha, M, dz, flag);
+    % Compute the rmse for the US Market
+    rmseUS = compute_rmse(Market_US, TTM_US, sigma_US, kappa_US, theta_US, M, dz, flag);
+elseif strcmp(flag_rmse, 'RMSE2')
+    % Compute the rmse for the EU Market
+    rmseEU = compute_rmse_2(Market_EU, TTM_EU, sigma_EU, kappa_EU, theta_EU, M, dz, flag);
 
-% Compute the rmse for the US Market
-rmseUS = compute_rmse_2(Market_US, TTM_US, sigma_US, kappa_US, theta_US, alpha, M, dz, flag);
-
+    % Compute the rmse for the US Market
+    rmseUS = compute_rmse_2(Market_US, TTM_US, sigma_US, kappa_US, theta_US, M, dz, flag);
+else
+    disp('Error: flag_rmse must be RMSE or RMSE2')
+end
 % Compute the objective function
 obj = w_EU * rmseEU + w_US * rmseUS;
 

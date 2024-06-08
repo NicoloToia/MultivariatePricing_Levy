@@ -44,8 +44,7 @@ for ii = 1:length(Market.datesExpiry)
     Filtered_Market.midCall(ii).value = Market.midCall(ii).value(Market.sensDelta.call(ii).value ~=0);
     Filtered_Market.midPut(ii).value = Market.midPut(ii).value(Market.sensDelta.put(ii).value ~=0);
     % Implied volatilities
-    Filtered_Market.OTM_ImpVol(ii).value = Market.OTM_ImpVol(ii).value(Market.sensDelta.call(ii).value ~=0);
-    
+    Filtered_Market.OTM_ImpVol(ii).value = Market.OTM_ImpVol(ii).value(Market.sensDelta.call(ii).value ~=0); 
 end
 
 end

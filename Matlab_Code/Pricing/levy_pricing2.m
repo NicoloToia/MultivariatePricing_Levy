@@ -1,5 +1,5 @@
-function [price, priceCI] = levy_pricing(Market_US, Market_EU, settlement, targetDate, ...
-                                alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim, flag)
+function [price, priceCI] = levy_pricing2(Market_US, Market_EU, settlement, targetDate, ...
+                                kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim, flag)
 % This function computes the price of a derivative using a Monte Carlo simulation under Lévy processes
 % 
 % INPUTS
@@ -15,6 +15,7 @@ function [price, priceCI] = levy_pricing(Market_US, Market_EU, settlement, targe
 %  theta_US: drift for the US market
 %  theta_EU: drift for the EU market
 %  N_sim: number of simulations
+%  flag: flag to choose the model (NIG or VG)
 %
 % OUTPUT
 %  price: price of the derivative
@@ -44,11 +45,8 @@ F0_EU = S0_EU/discount_EU;
 ACT_365 = 3;
 ttm = yearfrac(settlement, targetDate, ACT_365);
 
-% Simulation of the NIG processes
-% Use a Montecarlo simulation to compute the call prices
 % draw the standard normal random variables
 g = mvnrnd([0; 0], [1 rho; rho 1], N_sim);
-
 
 if strcmp(flag, 'NIG')
     % draw the inverse gaussian random variables
@@ -104,7 +102,7 @@ Indicator_function = (S1_EU < 0.95 * S0_EU);
 % Compute the payoff
 payoff = max(S1_US - S0_US, 0) .* Indicator_function;
 
-% Compute the price
+% Compute the price of the derivative
 price = discount_US * mean(payoff);
 
 % Confidence interval

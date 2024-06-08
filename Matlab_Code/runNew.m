@@ -11,6 +11,7 @@
 clear;
 close all;
 clc;
+warning("off")
 
 % fix the seed
 rng(42); % the answer to everything
@@ -41,6 +42,50 @@ Market_US = load('OptionData.mat').mkt;
 
 % Load the market returns
 load('SPXSX5Ereturns.mat');
+
+%% MODEL SELECTION
+% In this section, the user can select the model and the RMSE type to be used
+% for the calibration of the model parameters.
+% 
+% The user can choose between the Normal Inverse Gaussian (NIG) and the
+% Variance Gamma (VG) models.
+% 
+% The second option is related to the computation of the Root Mean Square Error (RMSE):
+%  ----> RMSE  : This is the simple version where the RMSE is computed without adjustment weights,
+%                and the maturities of the US Market are capped at 19 (excluding the last maturity).
+%  ----> RMSE2 : This is an updated version that allows calibration on all maturities. It considers the
+%                error only when the model price is outside the bid-ask spread; otherwise, the
+%                error is set to zero.
+
+% Create a pop-up window to select the model
+modelSelection = questdlg('Select the model:', 'Model Selection', 'NIG', 'VG', 'NIG');
+
+% Check the user's choice
+if isempty(modelSelection)
+    disp('No model selected.');
+end
+
+% Create a pop-up window to select the RMSE type
+rmseOptions = {'RMSE', 'RMSE2'};
+[selectedIndex, ok] = listdlg('PromptString', 'Select the RMSE type:', ...
+                              'SelectionMode', 'single', ...
+                              'ListString', rmseOptions);
+
+% Check the user's choice
+if ok == 0
+    disp('No RMSE type selected.');
+else
+    selectedRMSE = rmseOptions{selectedIndex};
+end
+
+% Display final choices
+disp('---------------------------------------------------------------------');
+fprintf('Final choice:\nModel: %s\nRMSE type: %s\n', modelSelection, selectedRMSE);
+disp('---------------------------------------------------------------------');
+
+% update the flag for the model selection
+flag = modelSelection;
+flag_rmse = selectedRMSE;
 
 %% COMPUTE DISCOUNT FACTORS AND FORWARD PRICES FROM OPTION DATA
 
@@ -86,7 +131,7 @@ hold on;
 plot(Market_EU.datesExpiry, F0_EU_KG, 'r--', 'LineWidth', 1);
 ylabel('Forward Prices');
 title('Forward Prices for the EURO STOXX 50');
-legend('Forward Prices', 'Spot Prices', 'Location', 'northwest');
+legend('Forward Prices', 'G-K Forward Prices', 'Location', 'northwest');
 grid on;
 hold off;
 
@@ -97,7 +142,7 @@ hold on;
 plot(Market_US.datesExpiry, F0_US_KG, 'r--', 'LineWidth', 1);  
 ylabel('Forward Prices');
 title('Forward Prices for the S&P 500');
-legend('Forward Prices', 'Spot Prices', 'Location', 'northwest');
+legend('Forward Prices', 'G-K Forward Prices', 'Location', 'northwest');
 grid on;
 hold off;
 
@@ -145,9 +190,6 @@ hold off;
 
 %% COMPUTE IMPLIED VOLATILITIES & SELECT OUT OF THE MONEY (OTM) OPTIONS
 
-% for the last date of US market we use put call parity to compute the call prices
-%Market_US.midCall(end).value = Market_US.midPut(end).value + discounts_US(end)*(F0_US(end) - [Market_US.strikes(end).value]');
-
 % Compute the implied volatilities for the EU market
 Market_EU = compute_ImpVol(Market_EU, TTM_EU, rates_EU);
 
@@ -161,10 +203,10 @@ Market_EU = select_OTM(Market_EU);
 Market_US = select_OTM(Market_US);
 
 %Plot the implied volatility smiles for the EU market
-% plot_ImpVol(Market_EU, 'EU OTM Implied Volatility Smile');
+plot_ImpVol(Market_EU, 'EU OTM Implied Volatility Smile');
 
 % Plot the implied volatility smiles for the US market
-% plot_ImpVol(Market_US, 'US OTM Implied Volatility Smile');
+plot_ImpVol(Market_US, 'US OTM Implied Volatility Smile');
 
 %% FILTERING
 
@@ -191,23 +233,40 @@ plot_ImpVol(Market_EU_filtered, 'EU OTM Implied Volatility Smile (Filtered)');
 % Plot the filtered implied volatility smiles for the US market
 plot_ImpVol(Market_US_filtered, 'US OTM Implied Volatility Smile (Filtered)');
 
-close all;
-%% 3D plot
+%% Volatility Surface Plot
+% Run this section to plot the 3D implied volatility surface for the EU and US markets.
 
 % Plot the 3D implied volatility surface for the EU market
-% plot3d_impl_vol_new(Market_EU_filtered)
+% plot3d_impl_vol_new(Market_EU_filtered, 'Volatilities Surface (EURO STOXX 50)')
 
 % Plot the 3D implied volatility surface for the US market
-% plot3d_impl_vol_new(Market_US_filtered)
+% plot3d_impl_vol_new(Market_US_filtered, 'Volatilities Surface (S&P 500)')
 
+%% Pause Execution to Review the Plots
+% The plots are displayed for user review. The user is prompted to review the plots,
+% and then press any key in the command window to continue with the script execution.
+% This step is performed before the calibration process to ensure the code execution remains manageable.
 
-    %% CALIBRATION
+% Pause the execution to review the plots, then press any key to continue
+msgbox('Please review the plots. When done, press any key in the command window to continue.', 'Review Plots', 'modal');
+disp('---------------------------------------------------------------------');
+disp('When you are ready to continue, press any key in the command window.');
+pause;
+
+% Close all open plots
+close all;
+
+% Continue with the rest of your code
+disp('All plots have been closed. Continuing with the script execution...');
+disp('---------------------------------------------------------------------');
+
+%% CALIBRATION
 
 % Define the weight of both markets (EU and US)
 w_EU = spot_EU/(spot_EU + spot_US);
 w_US = spot_US/(spot_EU + spot_US);
 
-% Set the Fast Fourier Transform (FFT) parameters
+% Set the Fast Fourier Transform (FFT) hyperparameters
 M_fft = 15;
 dz_fft = 0.0025;
 
@@ -219,8 +278,7 @@ dz_fft = 0.0025;
 % kappa_US = p(5)
 % theta_US = p(6)
 
-flag = 'NIG';
-
+% select the alpha according to the model
 if strcmp(flag, 'NIG')
     alpha = 0.5;
 elseif strcmp(flag, 'VG')
@@ -230,7 +288,8 @@ else
 end
 
 % Define the objective function
-obj_fun = @(p) objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU_filtered, Market_US_filtered, M_fft, dz_fft, alpha, flag);
+obj_fun = @(p) objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU_filtered, Market_US_filtered,...
+                                     M_fft, dz_fft, flag, flag_rmse);
 
 % Linear constraints
 A = [
@@ -248,51 +307,26 @@ b = [
 ];
 
 % Initial guess
-
-
-% p1 = [0.1 0.1 -0.1 0.1 0.1 -0.1];%1
-
-% p2 = [0.13 0.1 -0.1 0.13 0.1 -0.1];%3
-
-% p3 = 0.5*ones(1,6);%4
-
-% p4 = [0.20 0.01 -0.5 0.20 0.01 -0.5]; %5 buono rmse2
-
-% % build a matrix with initial conditions
-% P = [p1; p2; p3; p4];
-
 p0 = [0.1 0.1 -0.1 0.1 0.1 -0.1];%1
 
+% p0 = 0.2*rand(1, 6);
+
 % Non linear constraints    
-const = @(x) constraint(x, alpha);
+const = @(x) constraint(x);
+
 % lower bound & upper bound
 lb = [0 0 -inf 0 0 -inf];
 ub = [];
 
 % options
-% options = optimset('Display', 'iter');
 options = optimoptions('fmincon',...
     'OptimalityTolerance', 1e-7, ...
     'TolFun', 1e-5, ...
     'ConstraintTolerance', 1e-5,...
-    'Display', 'iter');
-% options = optimset('MaxFunEvals', 3e3, 'Display', 'iter');
-
+    'Display', 'off');                  % set iter to look into calibration steps
 
 % Optimization
 calibrated_param = fmincon(obj_fun, p0, A, b, [], [], lb, ub, const, options);
-
-%%
-% print the results
-disp('---------------------------------------------------------------------')
-disp('The optimal parameters are:');
-disp(['sigma_EU = ', num2str(calibrated_param(1))]);
-disp(['kappa_EU = ', num2str(calibrated_param(2))]);
-disp(['theta_EU = ', num2str(calibrated_param(3))]);
-disp(['sigma_US = ', num2str(calibrated_param(4))]);
-disp(['kappa_US = ', num2str(calibrated_param(5))]);
-disp(['theta_US = ', num2str(calibrated_param(6))]);
-disp('---------------------------------------------------------------------')
 
 % Rename the calibrated parameters for the EU market
 sigma_EU = calibrated_param(1);
@@ -303,6 +337,18 @@ theta_EU = calibrated_param(3);
 sigma_US = calibrated_param(4);
 kappa_US = calibrated_param(5);
 theta_US = calibrated_param(6);
+
+% Define the parameter names and corresponding values
+parameter_names = {'Market', 'sigma', 'kappa', 'theta'};
+parameter_values = {'EURO SSTOXX 50', sigma_EU, kappa_EU, theta_EU; 'S&P 500', sigma_US, kappa_US, theta_US};
+
+% Create a table and print the calibrated parameters
+T = table(parameter_values(:,1), parameter_values(:,2), parameter_values(:,3), parameter_values(:,4), ...
+    'VariableNames', parameter_names);
+disp(' ');
+disp(' The calibrated parameters are:');
+disp(T);
+disp('---------------------------------------------------------------------');
 
 %% NEW STRUCT FOR MARKET MODEL
 
@@ -337,55 +383,64 @@ Market_US_calibrated.B_bar = Market_US_filtered.B_bar;
 
 % compute the historical correlation between the two indexes
 corrHist = corr(Returns.Annually(:,2), Returns.Annually(:,1));
+
 % define the objective function
 obFun = @(nu) ( sqrt( nu(1)*nu(2) / ((nu(1) + nu(3)) * (nu(2) + nu(3)))) - corrHist )^2;
 
-% cambia la fincione obbiettivo e clibra nu z e basta!!!!!
-
-% define the constraints
+% define the  linear constraints
 A = [-1 0 0; 
       0 -1 0; 
       0 0 -1]; 
 b = [0; 0; 0];
 
+% Set the bounds
 lb = [0 0 max(kappa_US, kappa_EU)]; 
 ub = [];
 
-constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU, corrHist);
+% define the non linear constraints
+constNU = @(nu) cosnt_Nu(nu, kappa_US, kappa_EU);
 
+% Set the options
 options = optimoptions('fmincon', ...
-    'Algorithm', 'sqp', ...
+    'Algorithm', 'sqp', ...                 % Optimization algorithm: 'sqp' (Sequential Quadratic Programming)
     'OptimalityTolerance', 1e-8, ...
-    'ConstraintTolerance', 1e-6, ...      % Increase this value to relax the constraint tolerance
-    'StepTolerance', 1e-10, ...           % Decrease this value to allow smaller steps
-    'MaxIterations', 10000, ...            % Increase this value to allow more iterations
-    'MaxFunctionEvaluations', 3e4, ...  % Increase this value to allow more function evaluations
-    'Display', 'iter');                   % Display iteration information
+    'ConstraintTolerance', 1e-6, ... 
+    'StepTolerance', 1e-10, ...     
+    'MaxIterations', 10000, ...  
+    'MaxFunctionEvaluations', 3e4, ... 
+    'Display', 'off');                  
 
-% options = optimset('MaxFunEvals', 3e3, 'Display', 'iter');
-
+% Initial guess
 X0 = 0.5*ones(1,3);
 % X0 = [4 0.1 4];
 
 % calibration of the parameters
 nu_calibrated = fmincon(obFun, X0, A, b, [], [], lb, ub, constNU, options);
 
+% extract the calibrated parameters
 nu_US = nu_calibrated(1);
 nu_EU = nu_calibrated(2);
 nu_Z = nu_calibrated(3);
 
 % prnt the results
-disp('---------------------------------------------------------------------')
-disp(['nu_US = ', num2str(nu_US)]);
-disp(['nu_EU = ', num2str(nu_EU)]);
-disp(['nu_Z = ', num2str(nu_Z)]);
+% disp('---------------------------------------------------------------------')
+% disp(['nu_US = ', num2str(nu_US)]);
+% disp(['nu_EU = ', num2str(nu_EU)]);
+% disp(['nu_Z = ', num2str(nu_Z)]);
+% disp('---------------------------------------------------------------------')
+
+% print the results in a table
+T = table(nu_US, nu_EU, nu_Z, 'VariableNames', {'nu_US', 'nu_EU', 'nu_Z'});
+disp(' ');
+disp(' The calibrated parameters are:');
+disp(T);
 disp('---------------------------------------------------------------------')
 
 rho = sqrt(kappa_EU*kappa_US)/nu_Z;
 disp(rho)
 rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
 disp(rho)
-
+disp('---------------------------------------------------------------------')
 
 %%
 % % Define the historical correlation
@@ -434,7 +489,6 @@ disp(rho)
 % rho = sqrt(nu_US * nu_EU / ((nu_EU + nu_Z) * (nu_US + nu_Z)));
 % disp(rho)
 
-
 %% COMPUTE IDIOSYNCRATIC & SYSTEMIC PARAMETERS
 
 % Compute the idiosyncratic and systemic parameters for the two markets
@@ -455,35 +509,29 @@ Beta_Z = ID_SY_caliParm.Z.Beta;
 gamma_Z = ID_SY_caliParm.Z.gamma;
 nu_Z = ID_SY_caliParm.Z.nu;
 
-% print the results
-disp('---------------------------------------------------------------------')
-disp('The calibrated parameters are:');
-disp(['a_US = ', num2str(a_US)]);
-disp(['Beta_US = ', num2str(Beta_US)]);
-disp(['gamma_US = ', num2str(gamma_US)]);
-disp(['nu_US = ', num2str(nu_US)]);
-disp('--------------------------------------------');
-disp(['a_EU = ', num2str(a_EU)]);
-disp(['Beta_EU = ', num2str(Beta_EU)]);
-disp(['gamma_EU = ', num2str(gamma_EU)]);
-disp(['nu_EU = ', num2str(nu_EU)]);
-disp('--------------------------------------------');
-disp(['Beta_Z = ', num2str(Beta_Z)]);
-disp(['gamma_Z = ', num2str(gamma_Z)]);
-disp(['nu_Z = ', num2str(nu_Z)]);
-disp('---------------------------------------------------------------------')
+% Define the parameter names and corresponding values
+parameter_names = {'Parameter', 'a', 'gamma', 'nu', 'Beta'};
+parameter_values = {'Y_EU', a_EU, gamma_EU, nu_EU, Beta_EU; ...
+                    'Y_US', a_US, gamma_US, nu_US, Beta_US; ...
+                    'Z', '-', gamma_Z, nu_Z, Beta_Z};
+
+% Create a table
+T = table(parameter_values(:,1), parameter_values(:,2), parameter_values(:,3), parameter_values(:,4), parameter_values(:,5), ...
+    'VariableNames', parameter_names);
+disp(' ');
+disp(' The calibrated parameters for the idiosyncratic and systemic factors are:');
+disp(T);
+disp('---------------------------------------------------------------------');
 
 %% COMPUTE PRICES VIA CALIBRATED PARAMETERS
 
 % Choose the flag for the pricing method
 
 % Compute the prices for EU market
-Market_EU_calibrated = compute_prices(Market_EU_calibrated, TTM_EU, M_fft, dz_fft, alpha, flag);
+Market_EU_calibrated = compute_prices(Market_EU_calibrated, TTM_EU, M_fft, dz_fft, flag);
 
 % Compute the prices for US market
-Market_US_calibrated = compute_prices(Market_US_calibrated, TTM_US, M_fft, dz_fft, alpha, flag);
-
-%% CHECK FOR NEGATIVE PRICES
+Market_US_calibrated = compute_prices(Market_US_calibrated, TTM_US, M_fft, dz_fft, flag);
 
 % Check for negative prices in the EU and US markets
 check_neagtive_prices(Market_EU_calibrated, Market_US_calibrated);
@@ -495,9 +543,11 @@ check_neagtive_prices(Market_EU_calibrated, Market_US_calibrated);
         percentage_error(Market_EU_calibrated, Market_US_calibrated, Market_EU_filtered, Market_US_filtered);
 
 % Print the results
+disp(' Lévy Model Calibration Errors Check:');
+disp(' ');
 disp(['The average percentage error for the EU market is: ', num2str(percentage_error_EU), '%']);
 disp(['The average percentage error for the US market is: ', num2str(percentage_error_US), '%']);
-
+disp('  ');
 
 %% PLOT THE MODEL CALIBRATED PRICES VERSUS REAL PRICES FOR EACH EXPIRY
 
@@ -530,6 +580,7 @@ Market_US_calibrated = select_OTM(Market_US_calibrated);
 % print the results
 disp(['The average percentage error for the EU market (Implied Volatility) is: ', num2str(percentage_error_EU_IV), '%']);
 disp(['The average percentage error for the US market (Implied Volatility) is: ', num2str(percentage_error_US_IV), '%']);
+disp('---------------------------------------------------------------------');
 
 %% PLOT IMPLIED VOLATILITIES FOR THE CALIBRATED PRICES
 
@@ -539,24 +590,27 @@ disp(['The average percentage error for the US market (Implied Volatility) is: '
 % Plot the model implied volatilities versus the market implied volatilities for the US market
 % plot_model_ImpVol(Market_US_calibrated, Market_US_filtered, 'US Market Model Implied Volatilities vs US Market Implied Volatilities');
 
-%% 3D PLOT OF THE IMPLIED VOLATILITIES (MKT vs MOD)
+%% Implied Volatility Surface Plot: Model vs Market
+
+% EU Market
 % % plot the EU implied volatilities
 % figure;
 % % MKT
-% plot3D_impVol(Market_EU_filtered);
+% plot3D_impVol(Market_EU_filtered, 'EU Market Implied Volatilities');
 % hold on;
 % % MOD
-% plot3D_impVol(Market_EU_calibrated);
+% plot3D_impVol(Market_EU_calibrated, 'EU Market Implied Volatilities');
 % legend('MKT','MOD');
 % hold off;
-% %%
+
+% US Market
 % % plot the US implied volatilities
 % figure;
 % % MKT
-% plot3D_impVol(Market_US_filtered);
+% plot3D_impVol(Market_US_filtered, 'US Market Implied Volatilities');
 % hold on;
 % % MOD
-% plot3D_impVol(Market_US_calibrated);
+% plot3D_impVol(Market_US_calibrated, 'US Market Implied Volatilities');
 % legend('MKT','MOD');
 % hold off;
 
@@ -568,12 +622,10 @@ disp(['The average percentage error for the US market (Implied Volatility) is: '
 % Compute the historical correlation between the two markets with the yearly returns
 HistCorr = corr(Returns.Annually(:,2), Returns.Annually(:,1));
 
-% Display the results in a table format
-T = table(corrHist, 'VariableNames', {'Historical_Correlation'});
+% Print the results
+disp(' ');
+disp(['The historical correlation between the EURO STOXX 50 and the S&P 500 is: ', num2str(HistCorr)]);
 disp('---------------------------------------------------------------------');
-disp(T);
-disp('---------------------------------------------------------------------');
-
 
 %% NEW STRUCT FOR MARKET MODEL (BLACK)
 
@@ -613,12 +665,11 @@ sigmaB_EU = fmincon(EU_black_obj, 0.0001, [], [], [], [], 0, [], [], options);
 % US market
 sigmaB_US = fmincon(US_black_obj, 0.0001, [], [], [], [], 0, [], [], options);
 
-% print the results
-disp('---------------------------------------------------------------------')
-disp('The calibrated parameters are:');
-disp(['sigmaB_EU = ', num2str(sigmaB_EU)]);
-disp(['sigmaB_US = ', num2str(sigmaB_US)]);
-disp('---------------------------------------------------------------------')
+% print the results in a table
+T = table(sigmaB_EU, sigmaB_US, 'VariableNames', {'sigmaB_EU', 'sigmaB_US'});
+disp(' ');
+disp(' The calibrated parameters for the Black model are:');
+disp(T);
 
 % add volatilities to the struct
 Market_EU_Black.sigma = sigmaB_EU;
@@ -648,8 +699,11 @@ end
              percentage_error(Market_EU_Black, Market_US_Black, Market_EU_filtered, Market_US_filtered);
 
 % print the results
+disp(' ');
+disp('Black Model Calibration Errors Check:')
 disp(['The average percentage error for the EU market (Black Model) is: ', num2str(percentage_error_EU_Black), '%']);
 disp(['The average percentage error for the US market (Black Model) is: ', num2str(percentage_error_US_Black), '%']);
+disp('---------------------------------------------------------------------');
 
 % Plot the model prices for the EU market versus real prices for each expiry
 
@@ -659,8 +713,7 @@ disp(['The average percentage error for the US market (Black Model) is: ', num2s
 % Plot the model prices for the US market versus real prices for each expiry
 % plot_model_prices(Market_US_Black, Market_US_filtered, 'US Market Model Prices vs US Real Prices (Black Model)');
 
-
-%% PRICING USING BOTH MODELS: BLACK MODEL
+%% PRICING OF THE DERIVATIVE
 
 % Compute the price of the derivative with the following payoff:
 % Payoff = max(S1(t) - S1(0), 0)*I(S2(t) < 0.95*S2(0))
@@ -671,51 +724,48 @@ targetDate = datetime(settlement, 'ConvertFrom', 'datenum') + calyears(1);
 targetDate(~isbusday(targetDate, eurCalendar())) = busdate(targetDate(~isbusday(targetDate, eurCalendar())), 'modifiedfollow', eurCalendar());
 targetDate = datenum(targetDate);
 
+% Number of simulations
+N_sim = 1e7;
+
+%% PRICING VIA THE BLACK MODEL
+
 % Intialize the mean of the Brownian motions
 MeanBMs = [0;
            0];
 
-% Number of simulations
-N_sim = 1e7;
-
 % Compute the price of the derivative using the Black model
 [price_black, CI_black] = black_pricing(Market_US_Black, Market_EU_Black, settlement, targetDate, MeanBMs, HistCorr, N_sim);
 
-%%
+%% PRICING VIA THE LÉVY MODEL
+
 % Compute the price of the derivative using the Lévy model
-% [price_levy, CI_levy] = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
-%                                     alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, HistCorr, N_sim, flag);
-%%
+[price_levy1, CI_levy1] = levy_pricing1(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate,...
+                                     calibrated_param, ID_SY_caliParm, N_sim, flag);
+
+%% PRICING VIA THE LÉVY MODEL (ALTERNATIVE)
+
+% Compute the correlation between the two indexes, given the calibrated parameters
 % rho = sqrt(kappa_EU*kappa_US)/nu_Z;
 rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
-% rho = corrHist;
 
 % Compute the price of the derivative using the Lévy model
-[price_levy, CI_levy] = levy_pricing(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
-                                    alpha, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim, flag);
+[price_levy2, CI_levy2] = levy_pricing2(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate, ...
+                                    kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim, flag);
 
+%% PRICING VIA THE SEMI-CLOSED FORMULA
 
-%%
 % price via the semi closed formula
 price_closed_formula = closedFormula(Market_US_Black, Market_EU_Black, settlement, targetDate, HistCorr);
 
-%%
-% alternative
-
-[price_alt, CI_levy_alt] = levy_pricing_alternative(Market_US_calibrated, Market_EU_calibrated, settlement, targetDate,...
-                                     calibrated_param, ID_SY_caliParm, N_sim, flag);
-
-
-%%
-
-% Define the method names
-method_names = {'Black Model', 'Lévy Model', 'Closed Formula', 'Alternative Lévy'};
+%% PRINT THE DERIVATE PRICES AND CONFIDENCE INTERVALS
+% Define the parameter names and corresponding values
+method_names = {'Black Model', 'Lévy Model', 'Alternative Lévy', 'Semi-Closed Formula'};
 
 % Define the prices
-prices = [price_black, price_levy, price_closed_formula, price_alt];
+prices = [price_black, price_levy1, price_levy2, price_closed_formula];
 
 % Define the confidence intervals (NaN for those without a confidence interval)
-CI = {CI_black, CI_levy, NaN(1, 2), CI_levy_alt};
+CI = {CI_black, CI_levy1, CI_levy2, NaN(1, 2)};
 
 % Create a cell array to store the results
 results = cell(length(method_names), 3);
@@ -731,6 +781,9 @@ for i = 1:length(method_names)
 end
 
 % Print the results in a table format
+disp(' ');
+disp('The prices of the derivative and their confidence intervals are:')
+disp(' ');
 disp('Method                | Price       | Confidence Interval');
 disp('---------------------------------------------------------');
 for i = 1:length(method_names)

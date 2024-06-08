@@ -4,6 +4,7 @@ function plot_model_ImpVol(Model, Market, plotTitle)
 % INPUTS
 % Model: structure containing the model implied volatilities
 % Market: structure containing the market implied volatilities
+% plotTitle: title of the plot
 
 % cycle through the different maturities
 for ii = 1:length(Market.datesExpiry)

@@ -20,20 +20,6 @@ for ii = 1:length(Market.datesExpiry)
     
     Market.ImpVol_put(ii).value = blkimpv(Market.F0(ii).value, [Market.strikes(ii).value]',rates(ii),...
                 TTM(ii), [Market.midPut(ii).value], 'Class', {'Put'});
-
-    % % implied vol for ask and bid prices
-    % Market.ImpVol_call(ii).ask = blkimpv(Market.F0(ii).value, [Market.strikes(ii).value]',rates(ii),...
-    %             TTM(ii), [Market.callAsk(ii).prices]', 'Class', {'Call'});
-    % 
-    % Market.ImpVol_call(ii).bid = blkimpv(Market.F0(ii).value, [Market.strikes(ii).value]',rates(ii),...
-    %             TTM(ii), [Market.callBid(ii).prices]', 'Class', {'Call'});
-    % 
-    % Market.ImpVol_put(ii).ask = blkimpv(Market.F0(ii).value, [Market.strikes(ii).value]',rates(ii),...
-    %             TTM(ii), [Market.putAsk(ii).prices]', 'Class', {'Put'});
-    % 
-    % Market.ImpVol_put(ii).bid = blkimpv(Market.F0(ii).value, [Market.strikes(ii).value]',rates(ii),...
-    %             TTM(ii), [Market.putBid(ii).prices]', 'Class', {'Put'});
-
 end
 
 end

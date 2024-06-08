@@ -1,15 +1,18 @@
 function overview = dataset_overview(Market, Market_Title)
-% This function provides an overview of the dataset
+% This function computes the mean, median, standard deviation, and quantiles for the strikes, call prices, and put prices
+% of a given dataset. The function returns a structure with the computed values.
 %
-% INPUTS
+% INPUT
 %
-% Market: structure with the market data
-% Market_Title: title of the market
+% Market: Struct with Market data
+% Market_Title: Title of the Market data
 %
-% OUTPUTS
+% OUTPUT
 %
-
-% Assuming Market.strikes.value, Market.midCall.value, and Market.midPut.value are defined
+% overview: Struct with the computed values
+%           - strikes: Mean, median, standard deviation, and quantiles for strikes
+%           - call_prices: Mean, median, standard deviation, and quantiles for call prices
+%           - put_prices: Mean, median, standard deviation, and quantiles for put prices
 
 % Compute mean, median, std, and quantiles for strikes
 strikes = [Market.strikes.value];
@@ -48,8 +51,5 @@ resultsTable = struct2table(results);
 % Display the table
 disp(['Dataset Overview for ' Market_Title]);
 disp(resultsTable);
-
-
-
 
 end

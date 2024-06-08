@@ -1,4 +1,4 @@
-function [price, priceCI] = levy_pricing_alternative(Market_US, Market_EU, settlement, targetDate,...
+function [price, priceCI] = levy_pricing1(Market_US, Market_EU, settlement, targetDate,...
                              calibrated_param, ID_SY_caliParm, N_sim, flag)
 % This function computes the price of a barrier option using the Levy pricing alternative
 %
@@ -61,10 +61,6 @@ discount_EU = intExtDF(B_bar_EU, Expiries_EU, targetDate);
 ACT_365 = 3;
 ttm = yearfrac(settlement, targetDate, ACT_365);
 
-% compute rates at ttm
-rate_US = -log(discount_US)/ttm;
-rate_EU = -log(discount_EU)/ttm;
-
 spot_US = Market_US.spot;
 spot_EU = Market_EU.spot;
 
@@ -109,16 +105,12 @@ elseif strcmp(flag, 'VG')
     W(:,1)=W(:,1)+drift_compensator_Z*ttm+(1)*dS+gamma_US*sqrt(dS).*randn(N_sim,1);
     G_Z = W;
 
-    
 else
     error('Flag not recognized');
 end
 
+% draw the standard normal random variables
 g = randn(N_sim, 3);
-
-% G_US = random('inverseGaussian', 1, ttm/nu_US,[N_sim, 1]);
-% G_EU =  random('inverseGaussian', 1, ttm/nu_EU,[N_sim, 1]);
-% G_Z = random('inverseGaussian', 1, ttm/nu_Z,[N_sim, 1]);
 
 % Idyosyncratic processes
 Y_US =   - gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
@@ -130,19 +122,21 @@ Z =  - gamma_Z^2 * ( 0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .*
 X_US = Y_US + a_US * Z;
 X_EU = Y_EU + a_EU * Z;
 
-% S_EU = spot_EU * exp((rate_EU + drift_compensator_EU)*ttm + X_EU);
-% S_US = spot_US * exp((rate_US + drift_compensator_US)*ttm + X_US);
-
+% Compute the forward prices
 F0_EU = spot_EU/discount_EU;
 F0_US = spot_US/discount_US;
 
+% Simulate the dynamics of the two markets
 S_EU = F0_EU * exp(drift_compensator_EU*ttm + X_EU);
 S_US = F0_US * exp(drift_compensator_US*ttm + X_US);
 
+% Indicator function for EU market
 ind_fun = (S_EU < 0.95 * spot_EU);
 
+% Compute the payoff
 payoff = max(S_US - spot_US, 0) .* ind_fun;
 
+% Compute the price of the option
 price = discount_US * mean(payoff);
 
 % confidence interval

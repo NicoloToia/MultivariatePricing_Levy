@@ -3,9 +3,10 @@ function I = integralFFT(phi, M, dz, queryPoints)
 % using the FFT algorithm.
 %
 % INPUTS:
-%   f: function handle to the integrand
-%   M: N = 2^M number of points to use in the FFT
-%   xi_1: the fourier inferior limit
+%   phi: The integrand (characteristic function)
+%   M: The number of points in the grid
+%   dz: The grid spacing
+%   queryPoints: The points at which to interpolate the integral
 %
 % OUTPUTS:
 %   I: The integral of the integrand
@@ -37,14 +38,14 @@ I = prefactor .* FFT;
 
 %check that the immaginary part is close to zero
 % %if not plot the value of immaginary part (10 ^  is a threshold)
-if max(abs(imag(I))) > 10^-3
-    % figure;
-    % plot(imag(I))
-    warning('Immaginary part of the integral is not close to zero')
-    % display the value of the immaginary part and the iteration number
-    disp(['Immaginary part of the integral is: ', num2str(max(abs(imag(I))))])
-    disp(['Iteration number: ', num2str(M)])  
-end
+% if max(abs(imag(I))) > 10^-3
+%     % figure;
+%     % plot(imag(I))
+%     warning('Immaginary part of the integral is not close to zero')
+%     % display the value of the immaginary part and the iteration number
+%     disp(['Immaginary part of the integral is: ', num2str(max(abs(imag(I))))])
+%     disp(['Iteration number: ', num2str(M)])  
+% end
 
 % get only the real part
 I = real(I);

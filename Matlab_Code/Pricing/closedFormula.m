@@ -1,5 +1,5 @@
 function price_closed_formula = closedFormula(Market_US, Market_EU, setDate, targetDate, rho)
-% closedFormula computes the price of a derivative with payoff:
+% This function computes the price of a derivative with payoff:
 % Payoff = max(S1(t) - S1(0), 0)*I(S2(t) < 0.95*S2(0))
 % with a closed formula (the integral is numerically computed)
 %
@@ -9,7 +9,6 @@ function price_closed_formula = closedFormula(Market_US, Market_EU, setDate, tar
 % setDate: settlement date
 % targetDate: maturity of the derivative
 % rho: correlation between the markets
-%
 
 ACT_365 = 3;
 
@@ -47,6 +46,7 @@ x_max = (log(0.95) - (zeroRate_EU - 0.5 * sigma_EU^2) * ttm) / sigma_EU;
 A = @(omega) ((zeroRate_US-0.5*sigma_US.^2)*ttm + sigma_US*(ttm*(1-rho^2)*sigma_US + rho*omega))/(sigma_US*sqrt(ttm*(1-rho^2)));
 B = @(omega) A(omega) - sqrt(ttm*(1-rho^2))*sigma_US;
 
+% function to integrate
 fun = @(omega) (exp(zeroRate_US*ttm - 0.5*sigma_US^2*rho^2.*ttm + sigma_US*rho*omega).*...
             cdf('Normal',A(omega), 0, sqrt(ttm)) - cdf('Normal', B(omega), 0, sqrt(ttm))).*...
             1/sqrt(2*pi*ttm).*exp(-0.5*omega.^2/ttm);

@@ -68,5 +68,4 @@ a = 0.01;
 CI = norminv(1-a)*std(payoff)/sqrt(N_sim);
 priceCI = [price - CI, price + CI];
 
-
 end

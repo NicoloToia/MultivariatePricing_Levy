@@ -1,4 +1,4 @@
-function callPrices = callIntegral_fft(B0, F0, alpha, sigma, kappa, eta, t, log_moneyness, M, dz)
+function callPrices = callIntegral_fft(B0, F0, sigma, kappa, eta, t, log_moneyness, M, dz)
 % Compute the price of a call option using the integral of Normal Mean-Variance Mixture model
 %
 % INPUT:

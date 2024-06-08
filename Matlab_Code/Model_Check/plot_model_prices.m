@@ -4,7 +4,7 @@ function plot_model_prices(Model, Market, plotTitle)
 % INPUTS
 % Model: structure containing the calibrated model prices
 % Market: structure containing the market prices
-%
+% plotTitle: title of the plot
 
 % Cycle through the maturities
 for ii = 1:length(Market.datesExpiry)

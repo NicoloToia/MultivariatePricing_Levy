@@ -1,4 +1,9 @@
-function plot3D_impVol(Market)
+function plot3D_impVol(Market, title_name)
+% This function plots the market implied volatilities in 3D
+%
+% INPUTS
+%  Market: structure containing the market implied volatilities
+%  title_name: title of the plot
 
 % find the boundaries for the y and the smallest step 
 y_min = min(Market.strikes(1).value);
@@ -56,5 +61,5 @@ set(s, 'EdgeAlpha',0.1);
 xlabel('Expiries');
 ylabel('Strikes');
 zlabel('Implied Volatilities');
-title('3D Surf of Implied Volatilities');
+title(title_name);
 grid on;

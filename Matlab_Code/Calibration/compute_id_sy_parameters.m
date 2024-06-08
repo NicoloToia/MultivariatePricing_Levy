@@ -10,14 +10,13 @@ function calibParams = compute_id_sy_parameters(sigma_US,kappa_US, theta_US,sigm
 % kappa_EU: volatility of the volatility of the EU market
 % theta_US: skewness of the volatility of the US market
 % theta_EU: skewness of the volatility of the EU market
-% nu_Z: volatility of the jumps of the common factor
+% nu_Z: volatility of volatility of the systematic shock process
+% nu_US: volatility of volatility of the US market in the idiosyncratic shock process
+% nu_EU: volatility of volatility of the EU market in the idiosyncratic shock process
 %
 % OUTPUTS
 %
-% a_US: coefficient of the systematic factor
-% a_EU: coefficient of the systematic factor
-% Beta_Z: parameter of the systematic shock process
-% gamma_Z: parameter of the systematic shock process
+% calibParams: struct containing the calibrated parameters of the idiosyncratic shock process and the systematic shock process
 
 % Define the optimization variables
 id_sy_param = optimvar('id_sy_param', 4);
@@ -43,9 +42,11 @@ prob.Constraints.constraint_1 = id_sy_param(4) >= 0;
 % Initial value
 x0.id_sy_param = ones(4, 1);
 
-% Solve the optimization problem
-[solution, ~, ~, ~] = solve(prob, x0);
+% Options for the solver
+options = optimoptions('fmincon', 'Display', 'off');
 
+% Solve the optimization problem
+solution = solve(prob, x0, 'Options', options);
 
 % Extract the calibrated parameters
 a_US = solution.id_sy_param(1);

@@ -1,6 +1,6 @@
-function rmse_tot = compute_rmse_2(Market, TTM, sigma, kappa, theta, alpha, M, dz, flag)
+function rmse_tot = compute_rmse_2(Market, TTM, sigma, kappa, theta, M, dz, flag)
 % This function computes the root mean squared error (RMSE) between the model and the market prices for each
-% maturity and each strike. The calibation is performed considering both markets.
+% maturity and each strike. The RMSE is computed considering only the prices that are outside the bid-ask spread.
 %
 % INPUTS 
 % Market: struct containing the market data
@@ -8,7 +8,6 @@ function rmse_tot = compute_rmse_2(Market, TTM, sigma, kappa, theta, alpha, M, d
 % sigma: volatility
 % kappa: volatility of the volatility
 % theta: skewness of the volatility
-% alpha: Model parameter (NIG --> alpha = 0.5)
 % M: N = 2^M is the number of points in the grid
 % dz: grid spacing
 % flag: model selection NIG or VG
@@ -41,7 +40,7 @@ for ii = 1:min(length(TTM),20)
     log_moneyness = log(F0./strikes);
 
     % Compute the call prices via Lewis formula
-    callPrices = callIntegral(B0, F0, alpha, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz, flag);
+    callPrices = callIntegral(B0, F0, sigma, kappa, theta, TTM(ii), log_moneyness, M, dz, flag);
 
     % Compute the put prices via put-call parity
     putPrices = callPrices - B0*(F0 - strikes);
@@ -81,9 +80,6 @@ for ii = 1:min(length(TTM),20)
     else
         continue
     end
-
-    % same cycle as before but if the model price is inside the bid-ask spread
-    % set the value to be equal to the mid market price
 
     % Compute the RMSE
    rmse_vett(ii) = rmse( [OTM_put_model_f; OTM_call_model_f], ...

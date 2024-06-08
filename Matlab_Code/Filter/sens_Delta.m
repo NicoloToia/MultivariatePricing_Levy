@@ -16,10 +16,9 @@ d = 0;
 
 % Cycle over the different expiries and for each of them compute the delta sensitivities
 for ii = 1:length(TTM)
-   
+    % Compute the delta sensitivities for the i-th maturity and store them in the struct
     [Market.sensDelta.call(ii).value, Market.sensDelta.put(ii).value] = ...
         blsdelta(S0, [Market.strikes(ii).value]', rates(ii), TTM(ii), [Market.OTM_ImpVol(ii).value], d);
-
 end
 
 end
