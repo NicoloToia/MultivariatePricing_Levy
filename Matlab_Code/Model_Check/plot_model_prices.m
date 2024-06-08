@@ -15,7 +15,7 @@ for ii = 1:length(Market.datesExpiry)
     hold on;
     plot(Market.strikes(ii).value, Market.callAsk(ii).prices, 'r', 'LineWidth', 1);
     plot(Market.strikes(ii).value, Market.callBid(ii).prices, 'g', 'LineWidth', 1);
-    title([plotTitle, ' at maturity: ', num2str(ii), ' (CALL)']);
+    title([plotTitle, ' (CALL) ', char(Market.datesExpiry(ii))]);
     xlabel('Strikes');
     ylabel('Prices');
     legend('Model prices', 'Ask prices', 'Bid prices', 'Location', 'best');
@@ -34,7 +34,7 @@ for ii = 1:length(Market.datesExpiry)
     hold on;
     plot(Market.strikes(ii).value, Market.putAsk(ii).prices, 'r', 'LineWidth', 1);
     plot(Market.strikes(ii).value, Market.putBid(ii).prices, 'g', 'LineWidth', 1);
-    title([plotTitle, ' at maturity: ', num2str(ii), ' (PUT)']);
+    title([plotTitle, ' ', ' (PUT) ', char(Market.datesExpiry(ii))]);
     xlabel('Strikes');
     ylabel('Prices');
     legend('Model prices', 'Ask prices', 'Bid prices', 'Location', 'best');
