@@ -553,10 +553,10 @@ disp('  ');
 %% PLOT THE MODEL CALIBRATED PRICES VERSUS REAL PRICES FOR EACH EXPIRY
 
 % Plot the model prices for the EU market versus real prices for each expiry
-% plot_model_prices(Market_EU_calibrated, Market_EU_filtered, 'EU Market Model Prices vs EU Real Prices');
+plot_model_prices(Market_EU_calibrated, Market_EU_filtered, 'EU Model vs Market Prices');
 
 % Plot the model prices for the US market versus real prices for each expiry
-% plot_model_prices(Market_US_calibrated, Market_US_filtered, 'US Market Model Prices vs US Real Prices');
+% plot_model_prices(Market_US_calibrated, Market_US_filtered, 'US Model vs Market Prices');
 
 %% COMPUTE IMPLIED VOLATILITIES FOR THE CALIBRATED PRICES
 
@@ -594,26 +594,16 @@ disp('---------------------------------------------------------------------');
 %% Implied Volatility Surface Plot: Model vs Market
 
 % EU Market
-% % plot the EU implied volatilities
-% figure;
-% % MKT
-% plot3D_impVol(Market_EU_filtered, 'EU Market Implied Volatilities');
-% hold on;
-% % MOD
-% plot3D_impVol(Market_EU_calibrated, 'EU Market Implied Volatilities');
-% legend('MKT','MOD');
-% hold off;
+figure;
+plot3D_impVol(Market_EU_filtered, Market_EU_calibrated, 'EU Market Implied Volatilities');
+legend('MKT','MOD');
+hold off;
 
 % US Market
-% % plot the US implied volatilities
-% figure;
-% % MKT
-% plot3D_impVol(Market_US_filtered, 'US Market Implied Volatilities');
-% hold on;
-% % MOD
-% plot3D_impVol(Market_US_calibrated, 'US Market Implied Volatilities');
-% legend('MKT','MOD');
-% hold off;
+figure;
+plot3D_impVol(Market_US_filtered, Market_US_calibrated, 'US Market Implied Volatilities');
+legend('MKT','MOD');
+hold off;
 
 %%  ESTIMATE HISTORICAL CORRELATION BETWEEN THE TWO INDExES
 

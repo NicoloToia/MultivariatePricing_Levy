@@ -96,7 +96,6 @@ end
 
 % Plot the surface
 s = surf(xGrid_new, yGrid_new, zGrid_new_interpolated);
-get(s);
 set(s, 'EdgeAlpha',0.1);
 xlabel('Expiries');
 ylabel('Strikes');
