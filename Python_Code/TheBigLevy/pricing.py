@@ -1,9 +1,10 @@
 # import packages
 import numpy as np
-from scipy.stats import norm
+from scipy.stats import norm, invgauss, gamma
 from generals import yearfrac_act_365
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
+import pandas as pd
 
 # Function to compute interpolated discounts
 def int_ext_df(discounts, setDate, dates, target_date):
@@ -189,3 +190,104 @@ def closedFormula(Market_US, Market_EU, set_date, target_date, rho):
     price_closed_formula = discount_US * S0_US * I
 
     return price_closed_formula
+
+# Function to compute derivative price using closed formula
+def levy_pricing2(Market_US, Market_EU, settlement, target_date, kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US,
+                  theta_EU, rho, N_sim, flag):
+    """
+    Computes the price of a derivative using a Monte Carlo simulation under Lévy processes.
+
+    Parameters:
+    Market_US : dict
+        Market data for the US market.
+    Market_EU : dict
+        Market data for the EU market.
+    settlement : datetime
+        Settlement date.
+    target_date : datetime
+        Target date.
+    kappa_US : float
+        Lévy parameter for the US market.
+    kappa_EU : float
+        Lévy parameter for the EU market.
+    sigma_US : float
+        Volatility for the US market.
+    sigma_EU : float
+        Volatility for the EU market.
+    theta_US : float
+        Drift for the US market.
+    theta_EU : float
+        Drift for the EU market.
+    rho : float
+        Correlation between the markets.
+    N_sim : int
+        Number of simulations.
+    flag : str
+        Flag to choose the model ('NIG' or 'Error').
+
+    Returns:
+    tuple
+        Price of the derivative and confidence interval.
+    """
+    # Recall variables from the market data
+    S0_US = Market_US.spot
+    S0_EU = Market_EU.spot
+
+    # Import the expiries
+    Expiries_US = Market_US.datesExpiry
+    Expiries_EU = Market_EU.datesExpiry
+
+    # Import the market discounts B_bar
+    B_bar_US = Market_US.B_bar
+    B_bar_EU = Market_EU.B_bar
+
+    # Compute the discount via interpolation
+    discount_US = int_ext_df(B_bar_US, settlement, Expiries_US, target_date)
+    discount_EU = int_ext_df(B_bar_EU, settlement, Expiries_EU, target_date)
+
+    # Compute the forward prices
+    F0_US = S0_US / discount_US
+    F0_EU = S0_EU / discount_EU
+
+    # Compute the time to maturity
+    ttm = (target_date - settlement).days / 365.0
+
+    # Draw the standard normal random variables
+    g = np.random.multivariate_normal([0, 0], [[1, rho], [rho, 1]], N_sim)
+
+    if flag == 'NIG':
+        # Draw the inverse Gaussian random variables
+        G_EU = invgauss.rvs(mu=ttm / kappa_EU, scale=1, size=N_sim)
+        G_US = invgauss.rvs(mu=ttm / kappa_US, scale=1, size=N_sim)
+
+        # NIG model
+        compensatorEU_NIG = -ttm / kappa_EU * (1 - np.sqrt(1 - 2 * kappa_EU * theta_EU - kappa_EU * sigma_EU ** 2))
+        compensatorUS_NIG = -ttm / kappa_US * (1 - np.sqrt(1 - 2 * kappa_US * theta_US - kappa_US * sigma_US ** 2))
+
+        ft_EU = np.sqrt(ttm) * sigma_EU * np.sqrt(G_EU) * g[:, 0] - (
+                    0.5 + theta_EU) * ttm * sigma_EU ** 2 * G_EU + compensatorEU_NIG
+        ft_US = np.sqrt(ttm) * sigma_US * np.sqrt(G_US) * g[:, 1] - (
+                    0.5 + theta_US) * ttm * sigma_US ** 2 * G_US + compensatorUS_NIG
+
+    else:
+        raise ValueError('Flag not recognized')
+
+        # Simulate asset prices
+    S1_US = F0_US * np.exp(ft_US)
+    S1_EU = F0_EU * np.exp(ft_EU)
+
+    # Indicator function
+    Indicator_function = (S1_EU < 0.95 * S0_EU)
+
+    # Compute the payoff
+    payoff = np.maximum(S1_US - S0_US, 0) * Indicator_function
+
+    # Compute the price of the derivative
+    price = discount_US * np.mean(payoff)
+
+    # Confidence interval
+    a = 0.01
+    CI = norm.ppf(1 - a) * np.std(payoff) / np.sqrt(N_sim)
+    priceCI = [price - CI, price + CI]
+
+    return price, priceCI

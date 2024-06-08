@@ -23,7 +23,7 @@ from generals import sens_Delta, Filter
 from calibration import objective_function, constraint
 from calibration import Calibrated_OptionMarketData
 from calibration_black import Black_OptionMarketData, black_obj
-from pricing import black_pricing, closedFormula
+from pricing import black_pricing, closedFormula, levy_pricing2
 
 #%% ---- FIX THE SEED
 np.random.seed(42)  # the answer to everything
@@ -413,3 +413,15 @@ price_closed_formula = closedFormula(Market_US_black, Market_EU_black, settlemen
 print("---------------------------------------------------------------------")
 print(f"Price using Black model: {price_closed_formula}")
 print("---------------------------------------------------------------------")
+
+#%% ---- PRICING VIA THE LÉVY MODEL
+
+[price_levy2, CI_levy2] = levy_pricing2(Market_US_calibrated, Market_EU_calibrated, settlement, target_date,
+                                    kappa_US, kappa_EU, sigma_US, sigma_EU, theta_US, theta_EU, rho, N_sim, flag)
+
+# Print the results
+print("---------------------------------------------------------------------")
+print(f"Price using Lévy model: {price_levy2}")
+print(f"Confidence interval: {CI_levy2}")
+print("---------------------------------------------------------------------")
+
