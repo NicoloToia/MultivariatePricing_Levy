@@ -49,10 +49,12 @@ load('SPXSX5Ereturns.mat');
 % 
 % The user can choose between the Normal Inverse Gaussian (NIG) and the
 % Variance Gamma (VG) models.
-% 
+%
 % The second option is related to the computation of the Root Mean Square Error (RMSE):
+%
 %  ----> RMSE  : This is the simple version where the RMSE is computed without adjustment weights,
 %                and the maturities of the US Market are capped at 19 (excluding the last maturity).
+%
 %  ----> RMSE2 : This is an updated version that allows calibration on all maturities. It considers the
 %                error only when the model price is outside the bid-ask spread; otherwise, the
 %                error is set to zero.
