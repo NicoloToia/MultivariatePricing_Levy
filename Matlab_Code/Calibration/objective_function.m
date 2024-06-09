@@ -1,4 +1,4 @@
-function obj = objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU, Market_US, M, dz, flag, flag_rmse)
+function obj = objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU, Market_US, M, dz, flag, flag_rmse, flag_timeWindow)
 % This function computes the objective function for the calibration of the
 % model parameters. The objective function is the sum of the root mean
 % squared errors (RMSE) between the model and the market prices for each
@@ -40,10 +40,10 @@ theta_US = p(6);
 %   compute_rmse ----------> compute_rmse_2
 if strcmp(flag_rmse, 'RMSE')
     % Compute the rmse for the EU Market
-    rmseEU = compute_rmse(Market_EU, TTM_EU, sigma_EU, kappa_EU, theta_EU, M, dz, flag);
+    rmseEU = compute_rmse(Market_EU, TTM_EU, sigma_EU, kappa_EU, theta_EU, M, dz, flag, flag_timeWindow);
 
     % Compute the rmse for the US Market
-    rmseUS = compute_rmse(Market_US, TTM_US, sigma_US, kappa_US, theta_US, M, dz, flag);
+    rmseUS = compute_rmse(Market_US, TTM_US, sigma_US, kappa_US, theta_US, M, dz, flag, flag_timeWindow);
 elseif strcmp(flag_rmse, 'RMSE2')
     % Compute the rmse for the EU Market
     rmseEU = compute_rmse_2(Market_EU, TTM_EU, sigma_EU, kappa_EU, theta_EU, M, dz, flag);

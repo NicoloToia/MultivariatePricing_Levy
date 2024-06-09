@@ -1,4 +1,4 @@
-function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, M, dz, flag)
+function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, M, dz, flag, flag_timeWindow)
 % This function computes the root mean squared error (RMSE) between the model and the market prices for each
 % maturity and each strike. The calibation is performed considering both markets.
 %
@@ -19,13 +19,11 @@ function rmse_tot = compute_rmse(Market, TTM, sigma, kappa, theta, M, dz, flag)
 % Initialize rmse vector
 rmse_vett = zeros(length(TTM), 1);
 
-% Select the kind of weights to use
 
-% Compute weights to overweight short maturities errors on prices
+% LINEAR weights not used in the script, but described in the report
 % weights = flip((TTM./TTM(end))/sum(TTM./TTM(end)));
 
-% compute the weights to overweight the maturiies around the derivative pricing
-
+% TRIANGULAR weights not used in the script, but described in the report
 % settlement = datenum("07/09/2023");
 % targetDate = datetime(settlement, 'ConvertFrom', 'datenum') + calyears(1);
 % targetDate(~isbusday(targetDate, eurCalendar())) = busdate(targetDate(~isbusday(targetDate, eurCalendar())), 'modifiedfollow', eurCalendar());
@@ -43,7 +41,17 @@ rmse_vett = zeros(length(TTM), 1);
 % weights = (weights' / sum(weights));
 
 % Cycle over expiries
-for ii = 1:min(length(TTM),19)
+
+if flag_timeWindow == 1
+    date_calib = 739424;
+    % find the index of the date_calib in the time to maturity vector
+    index_calib = find(datenum(Market.datesExpiry) == date_calib);
+    vect = index_calib-2:index_calib+2;
+else
+    vect = 1:min(length(TTM),19);
+end
+
+for ii = vect
 
     % Import data from the Market struct
     F0 = Market.F0(ii).value;
@@ -78,7 +86,7 @@ for ii = 1:min(length(TTM),19)
     % Put prices for OTM options
     OTM_put_market = put(1:OTM_put_index);
 
-    % %volumes weights, uncomment to use them
+    % %volumes weights, not used in the script, but described in the report
     % % ******************************************************************
     % w_call = Market.Volume_call(ii).volume; 
     % w_put = Market.Volume_put(ii).volume;
