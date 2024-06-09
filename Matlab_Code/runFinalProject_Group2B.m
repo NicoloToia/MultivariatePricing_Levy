@@ -1,11 +1,13 @@
-%% THE BIG LÉVY PROJECT: Multivariate Pricing
+%% THE BIG LÉVY: Multivariate Pricing
+%
 % Final Project Financial Engineering 2024
 % Professors: Roberto Baviera & Michele Azzone
-% Group 2B
-% Giacomo Manfredi  CP: 10776946
-% Francesco Stillo  CP: 10698518
-% Nicolò Toia       CP: 10628899
 %
+% Group 2B
+%
+% Giacomo Manfredi  CP: 10776946    Mat: 247438
+% Francesco Stillo  CP: 10698518    Mat: 247230
+% Nicolò Toia       CP: 10628899    Mat: 247208
 
 % clear the workspace
 clear;
@@ -14,7 +16,7 @@ clc;
 warning("off")
 
 % fix the seed
-rng(42); % the answer to everything
+rng(42); % The answer to life, the universe, and everything
 
 % Compute Elapse Time
 tic
