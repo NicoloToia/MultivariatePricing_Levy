@@ -1,4 +1,4 @@
-function plot3d_impl_vol_new(Filtered_Market, title_name)
+function plot3d_impl_vol_singleSurf(Filtered_Market, title_name)
 % This function plots the implied volatilities in 3D
 % Input: Filtered_Market - structure with the filtered market data
 %        title_name - string with the title of the plot

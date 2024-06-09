@@ -251,10 +251,10 @@ plot_ImpVol(Market_US_filtered, 'US OTM Implied Volatility Smile (Filtered)');
 % Run this section to plot the 3D implied volatility surface for the EU and US markets.
 
 % Plot the 3D implied volatility surface for the EU market
-% plot3d_impl_vol_new(Market_EU_filtered, 'Volatilities Surface (EURO STOXX 50)')
+% plot3d_impl_vol_singleSurf(Market_EU_filtered, 'Volatilities Surface (EURO STOXX 50)')
 
 % Plot the 3D implied volatility surface for the US market
-% plot3d_impl_vol_new(Market_US_filtered, 'Volatilities Surface (S&P 500)')
+% plot3d_impl_vol_singleSurf(Market_US_filtered, 'Volatilities Surface (S&P 500)')
 
 %% Pause Execution to Review the Plots
 % The plots are displayed for user review. The user is prompted to review the plots,
