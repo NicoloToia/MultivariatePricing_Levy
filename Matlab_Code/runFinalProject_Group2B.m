@@ -68,8 +68,8 @@ if isempty(modelSelection)
 end
 
 % Create a pop-up window to select the RMSE type
-rmseOptions = {'RMSE', 'RMSE2'};
-[selectedIndex, ok] = listdlg('PromptString', 'Select the RMSE type:', ...
+rmseOptions = {'Unweighted', 'Filtered RMSE', 'TimeWindow'};
+[selectedIndex, ok] = listdlg('PromptString', 'Select the model type:', ...
                               'SelectionMode', 'single', ...
                               'ListString', rmseOptions);
 
@@ -87,7 +87,17 @@ disp('---------------------------------------------------------------------');
 
 % update the flag for the model selection
 flag = modelSelection;
-flag_rmse = selectedRMSE;
+
+if strcmp(selectedRMSE, 'TimeWindow')
+    flag_timeWindow = 1;
+    flag_rmse = 'RMSE';
+elseif strcmp(selectedRMSE, 'Unweighted')
+    flag_timeWindow = 0;
+    flag_rmse = 'RMSE';
+else 
+    flag_timeWindow = 0;
+    flag_rmse = 'RMSE2';
+end
 
 %% COMPUTE DISCOUNT FACTORS AND FORWARD PRICES FROM OPTION DATA
 
@@ -291,7 +301,7 @@ end
 
 % Define the objective function
 obj_fun = @(p) objective_function(p, TTM_EU, TTM_US, w_EU, w_US, Market_EU_filtered, Market_US_filtered,...
-                                     M_fft, dz_fft, flag, flag_rmse);
+                                     M_fft, dz_fft, flag, flag_rmse, flag_timeWindow);
 
 % Linear constraints
 A = [
@@ -326,8 +336,14 @@ options = optimoptions('fmincon',...
     'ConstraintTolerance', 1e-5,...
     'Display', 'off');                  % set iter to look into calibration steps
 
+% Display a message indicating the start of the calibration
+fprintf('Calibration started...\n');
+
 % Optimization
 calibrated_param = fmincon(obj_fun, p0, A, b, [], [], lb, ub, const, options);
+
+% Display a message indicating the end of the calibration
+fprintf('Calibration completed.\n');
 
 % Rename the calibrated parameters for the EU market
 sigma_EU = calibrated_param(1);
@@ -413,6 +429,7 @@ options = optimoptions('fmincon', ...
 
 % Initial guess
 X0 = 0.5*ones(1,3);
+% X0 = 0.2*ones(1,3);
 % X0 = [4 0.1 4];
 
 % calibration of the parameters
@@ -437,11 +454,13 @@ disp(' The calibrated parameters are:');
 disp(T);
 disp('---------------------------------------------------------------------')
 
-rho = sqrt(kappa_EU*kappa_US)/nu_Z;
-disp(rho)
+% rho = sqrt(kappa_EU*kappa_US)/nu_Z;
 rho = sqrt(nu_US*nu_EU / ((nu_EU+nu_Z) * (nu_US+nu_Z)));
-disp(rho)
-disp('---------------------------------------------------------------------')
+disp(['The calibrated correlation is: ', num2str(rho)]);
+disp('---------------------------------------------------------------------');
+
+% display rho improvements
+
 
 %%
 % % Define the historical correlation
@@ -553,7 +572,7 @@ disp('  ');
 %% PLOT THE MODEL CALIBRATED PRICES VERSUS REAL PRICES FOR EACH EXPIRY
 
 % Plot the model prices for the EU market versus real prices for each expiry
-plot_model_prices(Market_EU_calibrated, Market_EU_filtered, 'EU Model vs Market Prices');
+% plot_model_prices(Market_EU_calibrated, Market_EU_filtered, 'EU Model vs Market Prices');
 
 % Plot the model prices for the US market versus real prices for each expiry
 % plot_model_prices(Market_US_calibrated, Market_US_filtered, 'US Model vs Market Prices');
