@@ -247,11 +247,6 @@ def constraint(x, alpha):
     """
 
     # Inequality constraint
-    # c = [
-    #     - (1 - alpha) / (x[1] * x[0] ** 2) - x[2],  # sigma_EU, kappa_EU, theta_EU
-    #     - (1 - alpha) / (x[4] * x[3] ** 2) - x[5]   # sigma_US, kappa_US, theta_US
-    # ]
-
     c = []
 
     # Equality constraint

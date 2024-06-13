@@ -121,14 +121,14 @@ F0_EU = Market_EU.F0
 F0_US = Market_US.F0
 
 # Plot fwd prices
-# plt.figure()
-# plt.plot(Market_EU.datesExpiry, F0_EU, 'b', linewidth=1)
-# plt.plot(Market_US.datesExpiry, F0_US, 'r', linewidth=1)
-# plt.ylabel('Forward Prices')
-# plt.title('Forward Prices for the EURO STOXX 50')
-# plt.legend(['Forward Prices EU', 'Forward Prices EU'], loc='best')
-# plt.grid(True)
-# plt.show()
+plt.figure()
+plt.plot(Market_EU.datesExpiry, F0_EU, 'b', linewidth=1)
+plt.plot(Market_US.datesExpiry, F0_US, 'r', linewidth=1)
+plt.ylabel('Forward Prices')
+plt.title('Forward Prices for the EURO STOXX 50')
+plt.legend(['Forward Prices EU', 'Forward Prices EU'], loc='best')
+plt.grid(True)
+plt.show()
 
 # Compute Time to Maturity (TTM) in yearfrac
 TTM_EU = yearfrac_act_365(settlement, Market_EU.datesExpiry)
@@ -237,10 +237,8 @@ options = {
 
 
 # Optimization
-# result = minimize(obj_fun, p0, bounds=bounds, constraints=[linear_constraint] + nonlinear_constraints, options=options)
-# calibrated_param = result.x
-
-calibrated_param = [0.12519, 0.85192, -0.16004, 0.15624, 3.87596, -0.09363]
+result = minimize(obj_fun, p0, bounds=bounds, constraints=[linear_constraint] + nonlinear_constraints, options=options)
+calibrated_param = result.x
 
 
 
@@ -294,8 +292,9 @@ Market_US_calibrated = Calibrated_OptionMarketData(
 
 #%% ---- COMPUTE nu_Z USING CLOSE FORMULAS
 
-rho = 0.2516
-nu_Z = np.sqrt(kappa_EU*kappa_US)/rho #*************************************************************************
+# Import rho from MATLAB script
+rho = 0.24264
+nu_Z = np.sqrt(kappa_EU*kappa_US)/rho
 nu_EU = (kappa_EU * nu_Z) / (nu_Z - kappa_EU)
 nu_US = (kappa_US * nu_Z) / (nu_Z - kappa_US)
 
@@ -335,37 +334,7 @@ Market_US_black = Black_OptionMarketData(
 
 #%% ---- BLACK CALIBRATION
 
-# # Define the objective function for the Black model
-# # EU market
-# def EU_black_obj(sigma):
-#     return black_obj(Market_EU_filtered, TTM_EU, sigma)
-#
-# # US market
-# def US_black_obj(sigma):
-#     return black_obj(Market_US_filtered, TTM_US, sigma)
-#
-#
-# # Options for the optimizer
-# options = {
-#     'disp': False  # Equivalent to 'Display', 'off' in MATLAB
-# }
-#
-# # Initial guess for sigma
-# initial_guess = 0.001
-#
-# # Constraints: sigma > 0
-# bounds = [(0, None)]
-#
-# # Calibrate the Black model for the two markets
-#
-# # EU market
-# result_EU = minimize(EU_black_obj, initial_guess, bounds=bounds, options=options)
-# sigmaB_EU = result_EU.x[0]
-#
-# # US market
-# result_US = minimize(US_black_obj, initial_guess, bounds=bounds, options=options)
-# sigmaB_US = result_US.x[0]
-
+# Import the results from matlab scripts
 sigmaB_EU = 0.15688
 sigmaB_US = 0.16405
 
@@ -403,15 +372,15 @@ price_black, CI_black = black_pricing(Market_US_black, Market_EU_black, settleme
 
 # Print the results
 print("---------------------------------------------------------------------")
-print(f"Price using Black model: {price_black}")
-print(f"Confidence interval: {CI_black}")
+print(f"Price using Black model: {round(price_black,2)}")
+print(f"Confidence interval: {[round(p,2) for p in CI_black]}")
 print("---------------------------------------------------------------------")
 
 #%% ---- PRICING USING SEMI-CLOSED FORMULA
 
 price_closed_formula = closedFormula(Market_US_black, Market_EU_black, settlement, target_date, hist_corr)
 print("---------------------------------------------------------------------")
-print(f"Price using Black model: {price_closed_formula}")
+print(f"Price using semi-closed Black formula: {round(price_closed_formula,2)}")
 print("---------------------------------------------------------------------")
 
 #%% ---- PRICING VIA THE LÉVY MODEL
@@ -421,7 +390,7 @@ print("---------------------------------------------------------------------")
 
 # Print the results
 print("---------------------------------------------------------------------")
-print(f"Price using Lévy model: {price_levy2}")
-print(f"Confidence interval: {CI_levy2}")
+print(f"Price using Lévy model: {round(price_levy2,2)}")
+print(f"Confidence interval: {[round(p,2) for p in CI_levy2]}")
 print("---------------------------------------------------------------------")
 
