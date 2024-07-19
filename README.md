@@ -23,5 +23,3 @@ The main focus of this project is to analyze and implement a robust method for m
 Additionally, a brief pitch to present the project can be accessed at the following link:
 
 [Project Pitch](https://1drv.ms/f/s!ArAo2psTW77dgZ4kHwWRyi3ogPX2bg?e=Puh1Gb)
-
-For an in-depth understanding, please refer to the MATLAB and Python code provided, along with the detailed project report.
