@@ -773,13 +773,13 @@ price_closed_formula = closedFormula(Market_US_Black, Market_EU_Black, settlemen
 
 %% PRINT THE DERIVATE PRICES AND CONFIDENCE INTERVALS
 % Define the parameter names and corresponding values
-method_names = {'Black Model', 'Lévy Model', 'Alternative Lévy', 'Semi-Closed Formula'};
+method_names = {'Black Model', 'Lévy Model', 'Semi-Closed Formula'};
 
 % Define the prices
-prices = [price_black, price_levy1, price_levy2, price_closed_formula];
+prices = [price_black, price_levy1, price_closed_formula];
 
 % Define the confidence intervals (NaN for those without a confidence interval)
-CI = {CI_black, CI_levy1, CI_levy2, NaN(1, 2)};
+CI = {CI_black, CI_levy1, NaN(1, 2)};
 
 % Create a cell array to store the results
 results = cell(length(method_names), 3);

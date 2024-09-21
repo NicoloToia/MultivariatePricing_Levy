@@ -78,10 +78,10 @@ if strcmp(flag, 'NIG')
     g = randn(N_sim, 3);
 
     % Idyosyncratic processes
-    Y_US =   - gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
-    Y_EU =  - gamma_EU^2 * (0.5 + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
+    Y_US =   Beta_US .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1);
+    Y_EU =   Beta_EU .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2);
     % Systematic process
-    Z =  - gamma_Z^2 * ( 0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
+    Z =  Beta_Z .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3);
 
 elseif strcmp(flag, 'VG')
     % VG
@@ -118,10 +118,10 @@ elseif strcmp(flag, 'VG')
     g = randn(N_sim, 3);
 
     % Idyosyncratic processes
-    Y_US =   real(- gamma_US^2 * (0.5 + Beta_US) .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1));
-    Y_EU =  real(- gamma_EU^2 * (0.5 + Beta_EU) .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2));
+    Y_US =   real(Beta_US .* G_US * ttm + gamma_US .* sqrt(ttm .* G_US) .* g(:,1));
+    Y_EU =   real(Beta_EU .* G_EU * ttm + gamma_EU .* sqrt(ttm .* G_EU) .* g(:,2));
     % Systematic process
-    Z =  real(- gamma_Z^2 * ( 0.5 + Beta_Z) .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3));
+    Z =  real(Beta_Z .* G_Z * ttm + gamma_Z .* sqrt(ttm .* G_Z) .* g(:,3));
 else
     error('Flag not recognized');
 end
